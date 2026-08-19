@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kingshot Multi-Alliance Layout Planner</title>
+<style>
+  :root{
+    --bg:#10141a; --panel:#181e27; --panel2:#1f2733; --line:#2c3644;
+    --text:#dce4ee; --dim:#8b98a8; --accent:#4da3ff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; overflow:hidden;}
+  body{background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+  #app{display:flex; height:100%;}
+
+  /* ---------- sidebar ---------- */
+  #sidebar{width:292px; min-width:292px; background:var(--panel); border-right:1px solid var(--line);
+    overflow-y:auto; padding:14px 14px 40px; z-index:20;}
+  #sidebar h1{font-size:16px; letter-spacing:.3px;}
+  #sidebar .tag{color:var(--dim); font-size:11.5px; margin:2px 0 12px;}
+  .sec{margin-bottom:14px;}
+  .sec > .hd{font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:var(--dim); margin-bottom:6px;}
+  .row{display:flex; gap:6px; flex-wrap:wrap;}
+  button{background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:7px;
+    padding:6px 9px; font-size:12.5px; cursor:pointer; transition:background .12s, border-color .12s;}
+  button:hover{background:#273140;}
+  button.on{background:#20456e; border-color:var(--accent); color:#fff;}
+  button.danger:hover{background:#5a2530; border-color:#c0506a;}
+  button:disabled{opacity:.4; cursor:default;}
+  .palette button{display:flex; align-items:center; gap:7px; width:100%; text-align:left; margin-bottom:5px;}
+  .palette .sw{width:15px; height:15px; border-radius:4px; flex:none; border:1px solid rgba(255,255,255,.25);
+    transform:rotate(45deg) scale(.82);}
+  .palette .sz{margin-left:auto; color:var(--dim); font-size:11px;}
+
+  /* alliance rows */
+  .al{display:flex; align-items:center; gap:6px; padding:5px 6px; border:1px solid var(--line);
+    border-radius:8px; margin-bottom:5px; background:var(--panel2);}
+  .al.active{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset;}
+  .al input[type=color]{width:24px; height:24px; border:none; background:none; padding:0; cursor:pointer; flex:none;}
+  .al input[type=text]{flex:1; min-width:0; background:transparent; border:none; color:var(--text);
+    font-size:12.5px; outline:none; border-bottom:1px dashed transparent;}
+  .al input[type=text]:focus{border-bottom-color:var(--dim);}
+  .al .cnt{font-size:10.5px; color:var(--dim); flex:none;}
+  .al .ic{background:none; border:none; padding:2px 3px; font-size:13px; color:var(--dim); flex:none;}
+  .al .ic:hover{color:#fff; background:none;}
+
+  details{border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--panel2);}
+  details summary{cursor:pointer; font-size:12px; color:var(--dim); user-select:none;}
+  details[open] summary{margin-bottom:8px;}
+  .set{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; font-size:12px;}
+  .set input[type=number]{width:56px; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:5px; padding:3px 5px; font-size:12px;}
+  .set input[type=range]{width:110px;}
+  .note{font-size:11px; color:var(--dim); margin-top:6px;}
+
+  .kbd{display:inline-block; background:var(--bg); border:1px solid var(--line); border-bottom-width:2px;
+    border-radius:4px; padding:0 5px; font-size:10.5px; font-family:ui-monospace,monospace; color:var(--dim);}
+  #help p{font-size:11.5px; color:var(--dim); margin-bottom:4px;}
+
+  /* ---------- stage ---------- */
+  #stage{flex:1; position:relative; overflow:hidden;}
+  #cv{position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block;}
+  #hud{position:absolute; right:10px; bottom:8px; background:rgba(16,20,26,.82); border:1px solid var(--line);
+    border-radius:7px; padding:4px 10px; font-size:11.5px; color:var(--dim); pointer-events:none;
+    font-family:ui-monospace,monospace;}
+  #toast{position:absolute; left:50%; top:14px; transform:translateX(-50%); background:#20456e; color:#fff;
+    border-radius:8px; padding:7px 16px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none;}
+  #toast.show{opacity:1;}
+
+  /* city / player modal */
+  #modalBg{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:50;
+    align-items:center; justify-content:center;}
+  #modalBg.open{display:flex;}
+  #modal{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px;
+    width:320px; max-width:92vw;}
+  #modal h2{font-size:14px; margin-bottom:10px;}
+  #modal label{font-size:11px; color:var(--dim); display:block; margin:8px 0 3px;}
+  #modal input[type=text]{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:6px 8px; font-size:13px;}
+  #modal .mrow{display:flex; gap:6px; align-items:center;}
+  #modal .mrow input{flex:1;}
+  #pStatus{font-size:11.5px; min-height:16px; margin-top:6px; color:var(--dim);}
+  #pStatus.ok{color:#6fd67f;} #pStatus.err{color:#ff8080;}
+  #pPreview{display:flex; align-items:center; gap:8px; margin-top:8px; min-height:36px;}
+  #pPreview img{width:34px; height:34px; border-radius:50%; border:1px solid var(--line); display:none;}
+  #pPreview .pn{font-size:13px;}
+  #modal .mbtns{display:flex; gap:6px; justify-content:flex-end; margin-top:14px;}
+
+  #menuBtn{display:none; position:absolute; left:10px; top:10px; z-index:30; font-size:17px; padding:6px 11px;}
+  @media (max-width:760px){
+    #menuBtn{display:block;}
+    #sidebar{position:absolute; left:0; top:0; bottom:0; transform:translateX(-100%); transition:transform .2s;}
+    #sidebar.open{transform:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>Kingshot Layout Planner</h1>
+    <div class="tag">Multi-alliance territory planning</div>
+
+    <div class="sec">
+      <div class="hd">Tools</div>
+      <div class="row">
+        <button id="toolSelect" title="Select / move (V)">&#10022; Select</button>
+        <button id="toolPan" title="Pan (H) — or drag empty space / middle mouse">&#9995; Pan</button>
+        <button id="toolErase" title="Erase (E)">&#10006; Erase</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button id="btnUndo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+        <button id="btnRedo" title="Redo (Ctrl+Y)">&#8631; Redo</button>
+        <button id="btnCenter" title="Center view on your layout">&#8982; Fit</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="hd">Alliances</div>
+      <div id="allianceList"></div>
+      <button id="btnAddAlliance" style="width:100%;">+ Add alliance</button>
+      <div class="note">Click a row to make it the active alliance (new buildings go to it). &#128065; toggles visibility.</div>
+    </div>
+
+    <div class="sec palette">
+      <div class="hd">Alliance buildings</div>
+      <div id="palAlliance"></div>
+    </div>
+
+    <div class="sec palette">
+      <div class="hd">Map landmarks (neutral)</div>
+      <div id="palNeutral"></div>
+    </div>
+
+    <div class="sec">
+      <div class="hd">Layout</div>
+      <div class="row">
+        <button id="btnPng">&#128247; Export PNG</button>
+        <button id="btnSave">&#128190; Save</button>
+        <button id="btnLoad">&#128194; Load</button>
+        <button id="btnClear" class="danger">Clear all</button>
+      </div>
+      <div class="note">Save/Load uses a .json file you can share with co-leads. Work is also auto-saved in this browser.</div>
+    </div>
+
+    <div class="sec">
+      <details>
+        <summary>Settings — sizes &amp; coverage</summary>
+        <div class="set"><span>Diamond view (in-game angle)</span><input type="checkbox" id="setRot"></div>
+        <div class="set"><span>Map grid size</span><input type="number" id="setGrid" min="200" max="3000" step="50"></div>
+        <div class="set"><span>Territory opacity</span><input type="range" id="setOpacity" min="5" max="60"></div>
+        <div class="set"><span>March speed (tiles/min)</span><input type="number" id="setMarch" min="1" max="600" step="1" title="Calibrate: time one real march in game, then set tiles-per-minute here"></div>
+        <div class="set" style="flex-direction:column; align-items:stretch;"><span>Player lookup proxy (optional)</span>
+          <input type="text" id="setProxy" placeholder="https://your-worker.workers.dev" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:3px 5px; font-size:12px;"></div>
+        <div id="typeSettings"></div>
+        <div class="note">One grid square = one in-game tile. Default footprints/coverage are estimates — Kingshot values vary by server generation. Adjust here to match your kingdom; saved layouts keep your settings.</div>
+      </details>
+    </div>
+
+    <div class="sec" id="help">
+      <div class="hd">Shortcuts</div>
+      <p><span class="kbd">V</span> select &nbsp;<span class="kbd">H</span> pan &nbsp;<span class="kbd">E</span> erase &nbsp;<span class="kbd">Esc</span> cancel placing</p>
+      <p><span class="kbd">Del</span> delete selected &nbsp;<span class="kbd">Ctrl+Z</span>/<span class="kbd">Y</span> undo/redo</p>
+      <p>Mouse wheel zooms. Drag empty ground or middle-drag to pan. Click once to place, keep clicking to place more.</p>
+      <p>Double-click a <b>member city</b> to link a player ID (verified name + avatar). Double-click an <b>HQ</b> to rename its alliance. Select a <b>trap</b> to see march times from every member city.</p>
+    </div>
+  </aside>
+
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <button id="menuBtn">&#9776;</button>
+    <div id="hud"></div>
+    <div id="toast"></div>
+  </main>
+</div>
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+<div id="modalBg">
+  <div id="modal">
+    <h2>Member city</h2>
+    <label>Kingshot player ID</label>
+    <div class="mrow">
+      <input type="text" id="pFid" inputmode="numeric" placeholder="e.g. 123456789">
+      <button id="pVerify">Verify</button>
+    </div>
+    <div id="pStatus"></div>
+    <div id="pPreview"><img id="pAvatar" alt=""><span class="pn" id="pName"></span></div>
+    <label>Name (filled by verify, or type manually)</label>
+    <input type="text" id="pManual" maxlength="24" placeholder="Player name">
+    <div class="mbtns">
+      <button id="pCancel">Cancel</button>
+      <button id="pSave" class="on">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =============== data =============== */
+const TYPE_DEFS = {
+  hq:      {label:'Alliance HQ',   letter:'HQ', size:3, coverage:7, cat:'alliance'},
+  banner:  {label:'Banner',        letter:'B',  size:1, coverage:3, cat:'alliance'},
+  city:    {label:'Member city',   letter:'C',  size:2, coverage:0, cat:'alliance'},
+  trap:    {label:'Trap / rally',  letter:'T',  size:3, coverage:0, cat:'alliance'},
+  alnode:  {label:'Alliance node', letter:'AN', size:3, coverage:0, cat:'alliance'},
+  castle:  {label:"King's Castle", letter:'KC', size:6, coverage:0, cat:'neutral', color:'#a97fe0'},
+  turret:  {label:'Turret',        letter:'TR', size:3, coverage:0, cat:'neutral', color:'#d99a3d'},
+  fortress:{label:'Fortress',      letter:'F',  size:4, coverage:0, cat:'neutral', color:'#cf6a4f'},
+  node:    {label:'Resource node', letter:'N',  size:2, coverage:0, cat:'neutral', color:'#5fae63'},
+  obstacle:{label:'Obstacle',      letter:'',   size:1, coverage:0, cat:'neutral', color:'#55606e'},
+};
+const AL_COLORS = ['#4da3ff','#ff6b6b','#ffd166','#06d6a0','#c77dff','#f58f5b','#5be7e0','#ff9ff3'];
+
+let uid = 1;
+const state = {
+  grid: 1200,
+  opacity: 25,
+  rot: true,                 // diamond view (45°, matches in-game camera)
+  marchSpd: 60,              // march speed in tiles per minute (calibrate in Settings)
+  proxy: '',                 // optional player-lookup proxy URL (see README)
+  types: {},                 // per-type {size, coverage} overrides
+  alliances: [],             // {id,name,color,visible}
+  objects: [],               // {id,t,x,y,a,n,pid,av}  a=allianceId|null, n=name, pid=player id, av=avatar url
+  active: null,              // active alliance id
+};
+for (const k in TYPE_DEFS) state.types[k] = {size: TYPE_DEFS[k].size, coverage: TYPE_DEFS[k].coverage};
+
+function tSize(t){ return state.types[t].size; }
+function tCov(t){ return state.types[t].coverage; }
+function alliance(id){ return state.alliances.find(a=>a.id===id); }
+function objColor(o){
+  if (TYPE_DEFS[o.t].cat==='neutral') return TYPE_DEFS[o.t].color;
+  const a = alliance(o.a); return a ? a.color : '#888';
+}
+function addAlliance(name, color){
+  const a = {id:'a'+(uid++), name, color, visible:true};
+  state.alliances.push(a);
+  if (!state.active) state.active = a.id;
+  return a;
+}
+
+/* =============== Kingshot player lookup =============== */
+/* compact MD5 (RFC 1321) — returns lowercase hex; handles UTF-8 */
+function md5(str){
+  function rl(n,c){return (n<<c)|(n>>>(32-c));}
+  function ad(a,b){const l=(a&0xFFFF)+(b&0xFFFF),m=(a>>16)+(b>>16)+(l>>16);return (m<<16)|(l&0xFFFF);}
+  function cmn(q,a,b,x,s,t){return ad(rl(ad(ad(a,q),ad(x,t)),s),b);}
+  function ff(a,b,c,d,x,s,t){return cmn((b&c)|((~b)&d),a,b,x,s,t);}
+  function gg(a,b,c,d,x,s,t){return cmn((b&d)|(c&(~d)),a,b,x,s,t);}
+  function hh(a,b,c,d,x,s,t){return cmn(b^c^d,a,b,x,s,t);}
+  function ii(a,b,c,d,x,s,t){return cmn(c^(b|(~d)),a,b,x,s,t);}
+  const utf8 = unescape(encodeURIComponent(str));
+  const n = utf8.length;
+  const x = [];
+  for (let i=0;i<n;i++) x[i>>2] = (x[i>>2]||0) | (utf8.charCodeAt(i) << ((i%4)*8));
+  x[n>>2] = (x[n>>2]||0) | (0x80 << ((n%4)*8));
+  const len = ((n+8)>>6)*16+14;
+  x[len] = n*8; x[len+1] = 0;
+  for (let i=0;i<len;i++) if(x[i]===undefined) x[i]=0;
+  let a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for (let i=0;i<=len;i+=16){
+    const oa=a,ob=b,oc=c,od=d;
+    a=ff(a,b,c,d,x[i+0],7,-680876936);d=ff(d,a,b,c,x[i+1],12,-389564586);c=ff(c,d,a,b,x[i+2],17,606105819);b=ff(b,c,d,a,x[i+3],22,-1044525330);
+    a=ff(a,b,c,d,x[i+4],7,-176418897);d=ff(d,a,b,c,x[i+5],12,1200080426);c=ff(c,d,a,b,x[i+6],17,-1473231341);b=ff(b,c,d,a,x[i+7],22,-45705983);
+    a=ff(a,b,c,d,x[i+8],7,1770035416);d=ff(d,a,b,c,x[i+9],12,-1958414417);c=ff(c,d,a,b,x[i+10],17,-42063);b=ff(b,c,d,a,x[i+11],22,-1990404162);
+    a=ff(a,b,c,d,x[i+12],7,1804603682);d=ff(d,a,b,c,x[i+13],12,-40341101);c=ff(c,d,a,b,x[i+14],17,-1502002290);b=ff(b,c,d,a,x[i+15],22,1236535329);
+    a=gg(a,b,c,d,x[i+1],5,-165796510);d=gg(d,a,b,c,x[i+6],9,-1069501632);c=gg(c,d,a,b,x[i+11],14,643717713);b=gg(b,c,d,a,x[i+0],20,-373897302);
+    a=gg(a,b,c,d,x[i+5],5,-701558691);d=gg(d,a,b,c,x[i+10],9,38016083);c=gg(c,d,a,b,x[i+15],14,-660478335);b=gg(b,c,d,a,x[i+4],20,-405537848);
+    a=gg(a,b,c,d,x[i+9],5,568446438);d=gg(d,a,b,c,x[i+14],9,-1019803690);c=gg(c,d,a,b,x[i+3],14,-187363961);b=gg(b,c,d,a,x[i+8],20,1163531501);
+    a=gg(a,b,c,d,x[i+13],5,-1444681467);d=gg(d,a,b,c,x[i+2],9,-51403784);c=gg(c,d,a,b,x[i+7],14,1735328473);b=gg(b,c,d,a,x[i+12],20,-1926607734);
+    a=hh(a,b,c,d,x[i+5],4,-378558);d=hh(d,a,b,c,x[i+8],11,-2022574463);c=hh(c,d,a,b,x[i+11],16,1839030562);b=hh(b,c,d,a,x[i+14],23,-35309556);
+    a=hh(a,b,c,d,x[i+1],4,-1530992060);d=hh(d,a,b,c,x[i+4],11,1272893353);c=hh(c,d,a,b,x[i+7],16,-155497632);b=hh(b,c,d,a,x[i+10],23,-1094730640);
+    a=hh(a,b,c,d,x[i+13],4,681279174);d=hh(d,a,b,c,x[i+0],11,-358537222);c=hh(c,d,a,b,x[i+3],16,-722521979);b=hh(b,c,d,a,x[i+6],23,76029189);
+    a=hh(a,b,c,d,x[i+9],4,-640364487);d=hh(d,a,b,c,x[i+12],11,-421815835);c=hh(c,d,a,b,x[i+15],16,530742520);b=hh(b,c,d,a,x[i+2],23,-995338651);
+    a=ii(a,b,c,d,x[i+0],6,-198630844);d=ii(d,a,b,c,x[i+7],10,1126891415);c=ii(c,d,a,b,x[i+14],15,-1416354905);b=ii(b,c,d,a,x[i+5],21,-57434055);
+    a=ii(a,b,c,d,x[i+12],6,1700485571);d=ii(d,a,b,c,x[i+3],10,-1894986606);c=ii(c,d,a,b,x[i+10],15,-1051523);b=ii(b,c,d,a,x[i+1],21,-2054922799);
+    a=ii(a,b,c,d,x[i+8],6,1873313359);d=ii(d,a,b,c,x[i+15],10,-30611744);c=ii(c,d,a,b,x[i+6],15,-1560198380);b=ii(b,c,d,a,x[i+13],21,1309151649);
+    a=ii(a,b,c,d,x[i+4],6,-145523070);d=ii(d,a,b,c,x[i+11],10,-1120210379);c=ii(c,d,a,b,x[i+2],15,718787259);b=ii(b,c,d,a,x[i+9],21,-343485551);
+    a=ad(a,oa);b=ad(b,ob);c=ad(c,oc);d=ad(d,od);
+  }
+  return [a,b,c,d].map(w=>{let h='';for(let j=0;j<4;j++)h+=((w>>(j*8+4))&0xF).toString(16)+((w>>(j*8))&0xF).toString(16);return h;}).join('');
+}
+
+const KS_API = 'https://kingshot-giftcode.centurygame.com/api/player';
+const KS_SALT = 'mN4!pQs6JrYwV9';
+
+/* Century Games doesn't send CORS headers, so a browser usually can't call the API
+   directly. We try several routes in order and remember whichever one works:
+   1. your own proxy (Settings -> "Player lookup proxy", see README - most reliable)
+   2. direct (in case they ever enable CORS)
+   3. public CORS proxies (zero setup, but can be rate-limited or down)          */
+function lookupRoutes(){
+  const routes = [];
+  const p = (state.proxy||'').trim();
+  if (p) routes.push({name:'your proxy', url:p});
+  routes.push({name:'direct', url:KS_API});
+  routes.push({name:'corsproxy.io', url:'https://corsproxy.io/?url='+encodeURIComponent(KS_API)});
+  routes.push({name:'cors.lol', url:'https://api.cors.lol/?url='+encodeURIComponent(KS_API)});
+  return routes;
+}
+let goodRoute = null;   // remember the first route that worked this session
+
+async function fetchPlayer(fid){
+  fid = String(fid).trim();
+  if (!/^\d{3,12}$/.test(fid)) throw new Error('That does not look like a player ID');
+  const time = Date.now();
+  const sign = md5(`fid=${fid}&time=${time}` + KS_SALT);
+  const body = new URLSearchParams({sign, fid, time:String(time)}).toString();
+
+  const routes = lookupRoutes();
+  if (goodRoute) routes.sort((a,b)=>(a.url===goodRoute?-1:0)-(b.url===goodRoute?-1:0));
+
+  let lastErr = null;
+  for (const r of routes){
+    const ctl = new AbortController();
+    const timer = setTimeout(()=>ctl.abort(), 9000);
+    let res;
+    try{
+      res = await fetch(r.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body, signal: ctl.signal,
+      });
+    }catch(e){
+      clearTimeout(timer);
+      lastErr = new Error('blocked (CORS/network)');
+      continue;                       // try the next route
+    }
+    clearTimeout(timer);
+    let j = null;
+    try{ j = await res.json(); }catch(_){}
+    if (!j){ lastErr = new Error('bad reply via '+r.name); continue; }
+    if ((j.msg||'').toLowerCase().includes('success') && j.data && j.data.nickname){
+      goodRoute = r.url;
+      return {pid:fid, name:String(j.data.nickname), avatar:j.data.avatar_image||'', kid:j.data.kid};
+    }
+    // 404 {"message":""} = the endpoint itself no longer exists (removed by Century
+    // Games in the July 2026 gift-code flow change) - not a routing problem
+    if (res.status===404 || (typeof j.message!=='undefined' && !j.msg && !j.data)){
+      throw new Error('The Kingshot server answered, but Century Games removed the public player-lookup service (July 2026 update). Enter the name manually - Verify will work again automatically if they ever restore it.');
+    }
+    // a real answer from the game server - stop trying other routes
+    goodRoute = r.url;
+    if ((j.msg||'').toUpperCase().includes('ROLE NOT EXIST') || j.err_code===40004)
+      throw new Error('Player ID not found.');
+    if ((j.msg||'').toUpperCase().includes('TOO FREQUENT') || j.err_code===40009)
+      throw new Error('Rate limited - wait a minute and try again.');
+    throw new Error(j.msg ? ('Server said: '+j.msg) : 'Lookup failed.');
+  }
+  throw new Error('Could not reach the Kingshot server on any route (CORS/network). Enter the name manually, or see the README about running your own proxy.');
+}
+
+/* avatar image cache; taint-tracked so PNG export stays possible */
+const imgCache = new Map();
+function getAvatar(url){
+  if (!url) return null;
+  let e = imgCache.get(url);
+  if (!e){
+    e = {img:null, ok:false, taint:false};
+    imgCache.set(url, e);
+    const i1 = new Image();
+    i1.crossOrigin = 'anonymous';
+    i1.onload = ()=>{ e.img=i1; e.ok=true; requestDraw(); };
+    i1.onerror = ()=>{           // CDN without CORS headers: retry untainted-load for screen only
+      const i2 = new Image();
+      i2.onload = ()=>{ e.img=i2; e.ok=true; e.taint=true; requestDraw(); };
+      i2.src = url;
+    };
+    i1.src = url;
+  }
+  return e.ok ? e : null;
+}
+
+/* =============== history =============== */
+const undoStack = [], redoStack = [];
+function snapshot(){ return JSON.stringify({alliances:state.alliances, objects:state.objects, active:state.active}); }
+function pushHistory(){
+  undoStack.push(snapshot());
+  if (undoStack.length>120) undoStack.shift();
+  redoStack.length = 0;
+  updateHistBtns();
+}
+function restore(s){
+  const d = JSON.parse(s);
+  state.alliances = d.alliances; state.objects = d.objects; state.active = d.active;
+  if (state.active && !alliance(state.active)) state.active = state.alliances[0]?.id ?? null;
+  selected = null; terrDirty = true;
+  renderAlliances(); requestDraw(); autosave();
+}
+function undo(){ if(!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); updateHistBtns(); }
+function redo(){ if(!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); updateHistBtns(); }
+function updateHistBtns(){ btnUndo.disabled = !undoStack.length; btnRedo.disabled = !redoStack.length; }
+
+/* =============== view / canvas =============== */
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const view = {cx:600, cy:600, s:6};   // cx,cy = world tile at canvas center; s = px per tile
+let cw=0, chh=0, dpr=1;
+let A=0, cA=1, sA=0;                  // rotation angle + cached cos/sin
+function updAngle(){ A = state.rot ? -Math.PI/4 : 0; cA = Math.cos(A); sA = Math.sin(A); }
+
+function resize(){
+  dpr = window.devicePixelRatio || 1;
+  cw = cv.clientWidth; chh = cv.clientHeight;
+  cv.width = Math.round(cw*dpr); cv.height = Math.round(chh*dpr);
+  requestDraw();
+}
+window.addEventListener('resize', resize);
+
+function worldToScreen(wx,wy){
+  const dx = wx-view.cx, dy = wy-view.cy;
+  return {x: cw/2 + (dx*cA - dy*sA)*view.s, y: chh/2 + (dx*sA + dy*cA)*view.s};
+}
+function toWorld(px,py){
+  const dx = (px-cw/2)/view.s, dy = (py-chh/2)/view.s;
+  return {x: view.cx + dx*cA + dy*sA, y: view.cy - dx*sA + dy*cA};
+}
+/* keep world point w under screen point (px,py) */
+function anchor(w, px, py){
+  const dx = (px-cw/2)/view.s, dy = (py-chh/2)/view.s;
+  view.cx = w.x - (dx*cA + dy*sA);
+  view.cy = w.y - (-dx*sA + dy*cA);
+}
+function centerOn(x,y,s){ view.s=s; view.cx=x; view.cy=y; }
+
+function fitLayout(){
+  const b = layoutBounds();
+  const rotf = state.rot ? Math.SQRT1_2 : 1;
+  if (!b){
+    const span = state.rot ? state.grid*2*Math.SQRT1_2 : state.grid;
+    centerOn(state.grid/2, state.grid/2, Math.max(.35, Math.min(cw,chh)/Math.min(span+40, 400)));
+    requestDraw(); return;
+  }
+  const m = 6, w = b.x1-b.x0+2*m, h = b.y1-b.y0+2*m;
+  const rw = state.rot ? (w+h)*rotf : w;
+  const rh = state.rot ? (w+h)*rotf : h;
+  const s = Math.max(0.35, Math.min(30, Math.min(cw/rw, chh/rh)));
+  centerOn((b.x0+b.x1)/2, (b.y0+b.y1)/2, s);
+  requestDraw();
+}
+function layoutBounds(){
+  if (!state.objects.length) return null;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for (const o of state.objects){
+    const r = tCov(o.t), sz = tSize(o.t);
+    x0=Math.min(x0,o.x-r); y0=Math.min(y0,o.y-r);
+    x1=Math.max(x1,o.x+sz+r); y1=Math.max(y1,o.y+sz+r);
+  }
+  return {x0:Math.max(0,x0), y0:Math.max(0,y0), x1:Math.min(state.grid,x1), y1:Math.min(state.grid,y1)};
+}
+/* world-space bbox of what's visible on screen */
+function visibleWorldBox(){
+  const c1=toWorld(0,0), c2=toWorld(cw,0), c3=toWorld(0,chh), c4=toWorld(cw,chh);
+  return {
+    x0: Math.max(0, Math.floor(Math.min(c1.x,c2.x,c3.x,c4.x))),
+    y0: Math.max(0, Math.floor(Math.min(c1.y,c2.y,c3.y,c4.y))),
+    x1: Math.min(state.grid, Math.ceil(Math.max(c1.x,c2.x,c3.x,c4.x))),
+    y1: Math.min(state.grid, Math.ceil(Math.max(c1.y,c2.y,c3.y,c4.y))),
+  };
+}
+
+/* =============== territory cache =============== */
+let terrDirty = true;
+const terrCanvases = new Map();   // allianceId -> canvas (1px = 1 tile)
+function rebuildTerritories(){
+  terrCanvases.clear();
+  for (const a of state.alliances){
+    const c = document.createElement('canvas');
+    c.width = state.grid; c.height = state.grid;
+    const g = c.getContext('2d');
+    g.fillStyle = a.color;
+    let any = false;
+    for (const o of state.objects){
+      if (o.a!==a.id) continue;
+      const r = tCov(o.t);
+      if (r<=0) continue;
+      any = true;
+      g.fillRect(o.x-r, o.y-r, tSize(o.t)+2*r, tSize(o.t)+2*r);
+    }
+    if (any) terrCanvases.set(a.id, c);
+  }
+  terrDirty = false;
+}
+
+/* =============== drawing =============== */
+let drawPending = false;
+function requestDraw(){
+  if (drawPending) return;
+  drawPending = true;
+  requestAnimationFrame(()=>{ drawPending=false; draw(); });
+}
+
+/* apply world transform: 1 unit = 1 tile, rotated by A, centered on view */
+function worldTransform(g){
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.translate(cw/2, chh/2);
+  g.rotate(A);
+  g.scale(view.s, view.s);
+  g.translate(-view.cx, -view.cy);
+}
+
+function isHidden(o){ return o.a && alliance(o.a) && !alliance(o.a).visible; }
+
+function draw(){
+  updAngle();
+  const s = view.s;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#10141a';
+  ctx.fillRect(0,0,cw,chh);
+
+  if (terrDirty) rebuildTerritories();
+
+  /* ---- world-space pass ---- */
+  worldTransform(ctx);
+  ctx.fillStyle = '#161c25';
+  ctx.fillRect(0,0,state.grid,state.grid);
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = state.opacity/100;
+  for (const a of state.alliances){
+    if (!a.visible) continue;
+    const c = terrCanvases.get(a.id);
+    if (c) ctx.drawImage(c, 0, 0);
+  }
+  ctx.restore();
+
+  // grid lines — every line = one in-game tile
+  const v = visibleWorldBox();
+  if (s >= 4){
+    ctx.strokeStyle = 'rgba(255,255,255,.05)';
+    ctx.lineWidth = 1/s;
+    ctx.beginPath();
+    for (let x=v.x0; x<=v.x1; x++){ ctx.moveTo(x, v.y0); ctx.lineTo(x, v.y1); }
+    for (let y=v.y0; y<=v.y1; y++){ ctx.moveTo(v.x0, y); ctx.lineTo(v.x1, y); }
+    ctx.stroke();
+  }
+  if (s >= 1.2){
+    ctx.strokeStyle = 'rgba(255,255,255,.07)';
+    ctx.lineWidth = 1/s;
+    ctx.beginPath();
+    for (let x=Math.ceil(v.x0/10)*10; x<=v.x1; x+=10){ ctx.moveTo(x, v.y0); ctx.lineTo(x, v.y1); }
+    for (let y=Math.ceil(v.y0/10)*10; y<=v.y1; y+=10){ ctx.moveTo(v.x0, y); ctx.lineTo(v.x1, y); }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(120,150,190,.5)';
+  ctx.lineWidth = 1.5/s;
+  ctx.strokeRect(0,0,state.grid,state.grid);
+
+  // object shapes
+  for (const o of state.objects){
+    if (isHidden(o)) continue;
+    drawShape(ctx, o, s, o===selected);
+  }
+
+  // march lines: selected trap ← each member city of the same alliance
+  const mTrap = activeTrap();
+  if (mTrap){
+    const tsz = tSize('trap');
+    const tc = {x:mTrap.x+tsz/2, y:mTrap.y+tsz/2};
+    ctx.strokeStyle = objColor(mTrap);
+    ctx.lineWidth = 1.5/s;
+    ctx.setLineDash([3/s, 3/s]);
+    ctx.beginPath();
+    for (const o of trapCities(mTrap)){
+      const csz = tSize('city');
+      ctx.moveTo(o.x+csz/2, o.y+csz/2);
+      ctx.lineTo(tc.x, tc.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // placement ghost (shape part)
+  let ghostOk = true;
+  if (tool==='place' && ghost){
+    const sz = tSize(placeType), r = tCov(placeType);
+    ghostOk = ghost.x>=0 && ghost.y>=0 && ghost.x+sz<=state.grid && ghost.y+sz<=state.grid
+      && footprintClear(ghost.x, ghost.y, sz, null);
+    if (r>0){
+      ctx.fillStyle = ghostOk ? 'rgba(120,190,255,.12)' : 'rgba(255,90,90,.12)';
+      ctx.fillRect(ghost.x-r, ghost.y-r, sz+2*r, sz+2*r);
+      ctx.setLineDash([4/s,4/s]);
+      ctx.strokeStyle = ghostOk ? 'rgba(120,190,255,.5)' : 'rgba(255,90,90,.5)';
+      ctx.lineWidth = 1/s;
+      ctx.strokeRect(ghost.x-r, ghost.y-r, sz+2*r, sz+2*r);
+      ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = .6;
+    drawShape(ctx, {t:placeType, x:ghost.x, y:ghost.y, a:state.active}, s, false);
+    ctx.globalAlpha = 1;
+    if (!ghostOk){
+      ctx.strokeStyle='#ff5a5a'; ctx.lineWidth=2/s;
+      ctx.strokeRect(ghost.x, ghost.y, sz, sz);
+    }
+  }
+
+  /* ---- screen-space pass: upright labels ---- */
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  for (const o of state.objects){
+    if (isHidden(o)) continue;
+    drawLabel(ctx, o, worldToScreen, s);
+  }
+  if (tool==='place' && ghost)
+    drawLabel(ctx, {t:placeType, x:ghost.x, y:ghost.y, a:state.active, n:''}, worldToScreen, s, .7);
+
+  // march time labels (screen space, upright)
+  if (mTrap) drawMarchLabels(ctx, mTrap, worldToScreen);
+
+  drawHud();
+}
+
+function drawMarchLabels(g, trap, map){
+  const tsz = tSize('trap'), csz = tSize('city');
+  const tcx = trap.x+tsz/2, tcy = trap.y+tsz/2;
+  g.font = 'bold 11px system-ui';
+  g.textAlign='center'; g.textBaseline='middle';
+  for (const o of trapCities(trap)){
+    const ccx = o.x+csz/2, ccy = o.y+csz/2;
+    const dist = Math.hypot(tcx-ccx, tcy-ccy);
+    const label = fmtTime(marchSecs(dist));
+    const mid = map((ccx+tcx)/2, (ccy+tcy)/2);
+    if (mid.x < -40 || mid.y < -40 || mid.x > cw+40 || mid.y > chh+40) continue;
+    const w = g.measureText(label).width + 12;
+    g.fillStyle = 'rgba(10,13,18,.85)';
+    g.beginPath();
+    g.roundRect ? g.roundRect(mid.x-w/2, mid.y-9, w, 18, 5) : g.rect(mid.x-w/2, mid.y-9, w, 18);
+    g.fill();
+    g.strokeStyle = objColor(trap); g.lineWidth = 1;
+    g.stroke();
+    g.fillStyle = '#fff';
+    g.fillText(label, mid.x, mid.y+.5);
+  }
+}
+
+/* shape only — expects world transform to be active on g; su = px per tile (for line widths) */
+function drawShape(g, o, su, isSel){
+  const sz = tSize(o.t);
+  const col = objColor(o);
+  g.fillStyle = col;
+  g.fillRect(o.x, o.y, sz, sz);
+  g.strokeStyle = 'rgba(0,0,0,.55)';
+  g.lineWidth = Math.max(1/su, .08);
+  g.strokeRect(o.x, o.y, sz, sz);
+  if (isSel){
+    g.strokeStyle = '#fff'; g.lineWidth = 2/su;
+    g.strokeRect(o.x-2/su, o.y-2/su, sz+4/su, sz+4/su);
+    const r = tCov(o.t);
+    if (r>0){
+      g.setLineDash([5/su,4/su]); g.strokeStyle = col; g.lineWidth = 1.5/su;
+      g.strokeRect(o.x-r, o.y-r, sz+2*r, sz+2*r);
+      g.setLineDash([]);
+    }
+  }
+  g.lineWidth = 1;
+}
+
+/* text only — expects identity (screen) transform; map = world→screen fn; su = px per tile */
+let EXPORTING = false;
+function drawLabel(g, o, map, su, alpha){
+  const sz = tSize(o.t);
+  const pw = sz*su;
+  const c = map(o.x+sz/2, o.y+sz/2);
+  if (c.x < -80 || c.y < -80 || c.x > cw+80 || c.y > chh+80) return;
+  if (alpha) g.globalAlpha = alpha;
+  // member city with a verified player: avatar instead of the letter
+  let drewAvatar = false;
+  if (o.t==='city' && o.av && pw >= 16){
+    const av = getAvatar(o.av);
+    if (av && !(EXPORTING && av.taint)){
+      const r = Math.min(pw*.42, 22);
+      g.save();
+      g.beginPath(); g.arc(c.x, c.y, r, 0, Math.PI*2); g.closePath();
+      g.fillStyle='rgba(0,0,0,.35)'; g.fill();
+      g.clip();
+      try{ g.drawImage(av.img, c.x-r, c.y-r, 2*r, 2*r); drewAvatar = true; }catch(_){}
+      g.restore();
+      if (drewAvatar){
+        g.beginPath(); g.arc(c.x, c.y, r, 0, Math.PI*2);
+        g.strokeStyle='rgba(255,255,255,.8)'; g.lineWidth=1.5; g.stroke();
+      }
+    }
+  }
+  const letter = TYPE_DEFS[o.t].letter;
+  const nm = o.t==='hq' ? (alliance(o.a)?.name || o.n || '') : (o.n || '');
+  const hqInside = o.t==='hq' && nm && pw >= 26;   // alliance name fits inside the HQ square
+  if (!drewAvatar && letter && pw >= 13){
+    const ly = hqInside ? c.y - pw*.13 : c.y;      // nudge "HQ" up to make room for the name
+    g.font = `bold ${Math.max(9, Math.min(pw*.4, 26))}px system-ui`;
+    g.textAlign='center'; g.textBaseline='middle';
+    g.fillStyle='rgba(0,0,0,.5)';
+    g.fillText(letter, c.x+1, ly+1);
+    g.fillStyle='#fff';
+    g.fillText(letter, c.x, ly);
+  }
+  if (nm && (su >= 5 || (o.t==='hq' && su >= 2.5))){
+    if (hqInside){
+      // alliance name inside the square, under the HQ letters, shrunk to fit
+      const maxW = pw*(state.rot ? 1.15 : .92);    // diamond is wider across its middle
+      let fs = Math.max(8, Math.min(pw*.22, 15));
+      g.font = `bold ${fs}px system-ui`;
+      while (fs > 7 && g.measureText(nm).width > maxW){ fs--; g.font = `bold ${fs}px system-ui`; }
+      g.textAlign='center'; g.textBaseline='middle';
+      const ny = c.y + pw*.18;
+      g.fillStyle='rgba(0,0,0,.55)';
+      g.fillText(nm, c.x+1, ny+1);
+      g.fillStyle='#fff';
+      g.fillText(nm, c.x, ny);
+    } else {
+      const oy = pw*(state.rot ? .78 : .58) + 4;
+      g.font = `${o.t==='hq'?'bold ':''}${Math.max(10, Math.min(su*1.6, 15))}px system-ui`;
+      g.textAlign='center'; g.textBaseline='top';
+      g.fillStyle='rgba(0,0,0,.6)';
+      g.fillText(nm, c.x+1, c.y+oy+1);
+      g.fillStyle = o.t==='hq' ? '#fff' : '#e8eef6';
+      g.fillText(nm, c.x, c.y+oy);
+    }
+  }
+  if (alpha) g.globalAlpha = 1;
+}
+
+/* ---- march time helpers ---- */
+function fmtTime(sec){
+  sec = Math.round(sec);
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+}
+function marchSecs(distTiles){
+  const tilesPerSec = (state.marchSpd || 60)/60;
+  return distTiles / Math.max(.01, tilesPerSec);
+}
+/* trap whose march lines should be shown: the selected one */
+function activeTrap(){
+  return (selected && selected.t==='trap') ? selected : null;
+}
+function trapCities(trap){
+  return state.objects.filter(o=>o.t==='city' && o.a===trap.a);
+}
+
+const hud = document.getElementById('hud');
+let cursorTile = null;
+function drawHud(){
+  const t = cursorTile ? `X:${cursorTile.x} Y:${cursorTile.y}` : '—';
+  hud.textContent = `${t}  ·  zoom ${Math.round(view.s*100/6)}%  ·  grid ${state.grid}×${state.grid} (1 sq = 1 tile)`;
+}
+
+/* =============== interaction =============== */
+let tool = 'select', placeType = null, ghost = null, selected = null;
+let drag = null;
+const pointers = new Map();
+let pinch = null;
+
+function setTool(t, pt){
+  tool = t; placeType = pt||null; ghost = null;
+  if (t!=='select') selected = null;
+  document.getElementById('toolSelect').classList.toggle('on', t==='select');
+  document.getElementById('toolPan').classList.toggle('on', t==='pan');
+  document.getElementById('toolErase').classList.toggle('on', t==='erase');
+  document.querySelectorAll('.palette button').forEach(b=>b.classList.toggle('on', t==='place' && b.dataset.t===placeType));
+  cv.style.cursor = t==='pan' ? 'grab' : t==='erase' ? 'not-allowed' : 'crosshair';
+  requestDraw();
+}
+
+function hitTest(wx,wy){
+  for (let i=state.objects.length-1; i>=0; i--){
+    const o = state.objects[i];
+    if (isHidden(o)) continue;
+    const sz = tSize(o.t);
+    if (wx>=o.x && wx<o.x+sz && wy>=o.y && wy<o.y+sz) return o;
+  }
+  return null;
+}
+function placeAt(wx,wy){
+  const sz = tSize(placeType);
+  const off = Math.floor((sz-1)/2);
+  return {x: Math.round(wx-off-.5), y: Math.round(wy-off-.5)};
+}
+/* physical footprints can't overlap (territory coverage can) */
+function footprintClear(x, y, sz, ignore){
+  for (const o of state.objects){
+    if (o===ignore) continue;
+    const os = tSize(o.t);
+    if (x < o.x+os && x+sz > o.x && y < o.y+os && y+sz > o.y) return false;
+  }
+  return true;
+}
+
+cv.addEventListener('pointerdown', e=>{
+  cv.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, {x:e.offsetX, y:e.offsetY});
+  if (pointers.size===2){
+    const [p1,p2] = [...pointers.values()];
+    pinch = {d: Math.hypot(p1.x-p2.x, p1.y-p2.y), s: view.s};
+    drag = null;
+    return;
+  }
+  const w = toWorld(e.offsetX, e.offsetY);
+  if (e.button===1 || tool==='pan'){
+    drag = {mode:'pan', w};
+    cv.style.cursor='grabbing';
+    e.preventDefault();
+    return;
+  }
+  if (e.button===2) return;
+  if (tool==='place'){
+    const p = placeAt(w.x,w.y), sz = tSize(placeType);
+    if (p.x<0||p.y<0||p.x+sz>state.grid||p.y+sz>state.grid){ toast('Out of map bounds'); return; }
+    if (TYPE_DEFS[placeType].cat==='alliance' && !state.active){ toast('Add an alliance first'); return; }
+    if (!footprintClear(p.x, p.y, sz, null)){ toast("Buildings can't overlap"); return; }
+    pushHistory();
+    const nob = {id:'o'+(uid++), t:placeType, x:p.x, y:p.y,
+      a: TYPE_DEFS[placeType].cat==='alliance' ? state.active : null, n:''};
+    state.objects.push(nob);
+    if (placeType==='trap') selected = nob;   // show march times immediately
+    terrDirty = true; renderAlliances(); requestDraw(); autosave();
+    return;
+  }
+  if (tool==='erase'){
+    drag = {mode:'erase', did:false};
+    eraseAt(w);
+    return;
+  }
+  const o = hitTest(w.x,w.y);
+  if (o){
+    selected = o;
+    drag = {mode:'move', o, gx:w.x-o.x, gy:w.y-o.y, moved:false};
+  } else {
+    selected = null;
+    drag = {mode:'pan', w};
+  }
+  requestDraw();
+});
+
+function eraseAt(w){
+  const o = hitTest(w.x,w.y);
+  if (o){
+    if (drag && !drag.did){ pushHistory(); drag.did=true; }
+    else if (!drag) pushHistory();
+    state.objects = state.objects.filter(q=>q!==o);
+    if (selected===o) selected=null;
+    terrDirty = true; renderAlliances(); requestDraw(); autosave();
+  }
+}
+
+cv.addEventListener('pointermove', e=>{
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.offsetX, y:e.offsetY});
+  if (pinch && pointers.size===2){
+    const [p1,p2] = [...pointers.values()];
+    const d = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+    const cx=(p1.x+p2.x)/2, cy=(p1.y+p2.y)/2;
+    const w = toWorld(cx,cy);
+    view.s = Math.max(.35, Math.min(40, pinch.s * d/pinch.d));
+    anchor(w, cx, cy);
+    requestDraw();
+    return;
+  }
+  const w = toWorld(e.offsetX, e.offsetY);
+  cursorTile = {x:Math.floor(w.x), y:Math.floor(w.y)};
+  if (drag){
+    if (drag.mode==='pan'){
+      anchor(drag.w, e.offsetX, e.offsetY);   // grabbed world point follows cursor
+      requestDraw();
+    } else if (drag.mode==='move'){
+      const sz = tSize(drag.o.t);
+      let nx = Math.round(w.x-drag.gx), ny = Math.round(w.y-drag.gy);
+      nx = Math.max(0, Math.min(state.grid-sz, nx));
+      ny = Math.max(0, Math.min(state.grid-sz, ny));
+      // blocked by another building? try sliding along one axis, else stay put
+      if (!footprintClear(nx, ny, sz, drag.o)){
+        if (footprintClear(nx, drag.o.y, sz, drag.o)) ny = drag.o.y;
+        else if (footprintClear(drag.o.x, ny, sz, drag.o)) nx = drag.o.x;
+        else { nx = drag.o.x; ny = drag.o.y; }
+      }
+      if (nx!==drag.o.x || ny!==drag.o.y){
+        if (!drag.moved){ pushHistory(); drag.moved=true; }
+        drag.o.x=nx; drag.o.y=ny; terrDirty=true;
+        requestDraw();
+      }
+    } else if (drag.mode==='erase'){
+      eraseAt(w);
+    }
+  }
+  if (tool==='place'){ ghost = placeAt(w.x,w.y); requestDraw(); }
+  else requestDraw();
+});
+
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if (pointers.size<2) pinch = null;
+  if (drag){
+    if (drag.mode==='move' && drag.moved) autosave();
+    drag = null;
+    cv.style.cursor = tool==='pan' ? 'grab' : tool==='erase' ? 'not-allowed' : 'crosshair';
+  }
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+cv.addEventListener('pointerleave', ()=>{ cursorTile=null; ghost=null; requestDraw(); });
+
+cv.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const f = e.deltaY<0 ? 1.13 : 1/1.13;
+  const w = toWorld(e.offsetX, e.offsetY);
+  view.s = Math.max(.35, Math.min(40, view.s*f));
+  anchor(w, e.offsetX, e.offsetY);
+  requestDraw();
+}, {passive:false});
+
+cv.addEventListener('contextmenu', e=>{ e.preventDefault(); if(tool==='place') setTool('select'); });
+
+cv.addEventListener('dblclick', e=>{
+  const w = toWorld(e.offsetX, e.offsetY);
+  const o = hitTest(w.x,w.y);
+  if (!o) return;
+  if (o.t==='city'){ openCityModal(o); return; }
+  if (o.t==='hq'){
+    const a = alliance(o.a);
+    if (a){
+      const n = prompt('Alliance name (shown under the HQ):', a.name);
+      if (n!==null){ pushHistory(); a.name = n.trim().slice(0,20)||a.name; renderAlliances(); requestDraw(); autosave(); }
+    }
+    return;
+  }
+  const n = prompt('Name this ' + TYPE_DEFS[o.t].label + ':', o.n||'');
+  if (n!==null){ pushHistory(); o.n = n.trim().slice(0,24); requestDraw(); autosave(); }
+});
+
+/* =============== member city modal =============== */
+const modalBg = document.getElementById('modalBg');
+const pFid = document.getElementById('pFid'), pManual = document.getElementById('pManual');
+const pStatus = document.getElementById('pStatus'), pAvatar = document.getElementById('pAvatar'), pName = document.getElementById('pName');
+let modalCity = null, verified = null;
+
+function openCityModal(o){
+  modalCity = o; verified = null;
+  pFid.value = o.pid || '';
+  pManual.value = o.n || '';
+  pStatus.textContent = ''; pStatus.className = '';
+  pName.textContent = o.n || '';
+  if (o.av){ pAvatar.src = o.av; pAvatar.style.display='inline-block'; }
+  else { pAvatar.removeAttribute('src'); pAvatar.style.display='none'; }
+  modalBg.classList.add('open');
+  setTimeout(()=>pFid.focus(), 50);
+}
+function closeCityModal(){ modalBg.classList.remove('open'); modalCity = null; verified = null; }
+
+document.getElementById('pVerify').onclick = async ()=>{
+  const fid = pFid.value.trim();
+  pStatus.className=''; pStatus.textContent = 'Checking with the Kingshot server…';
+  try{
+    const p = await fetchPlayer(fid);
+    verified = p;
+    pStatus.className='ok';
+    pStatus.textContent = 'Verified' + (p.kid ? ` — Kingdom #${p.kid}` : '');
+    pName.textContent = p.name;
+    pManual.value = p.name;
+    if (p.avatar){ pAvatar.src = p.avatar; pAvatar.style.display='inline-block'; }
+    else { pAvatar.style.display='none'; }
+  }catch(err){
+    verified = null;
+    pStatus.className='err';
+    pStatus.textContent = err.message || 'Lookup failed.';
+  }
+};
+document.getElementById('pSave').onclick = ()=>{
+  if (!modalCity) return;
+  pushHistory();
+  modalCity.pid = pFid.value.trim() || undefined;
+  modalCity.n = (pManual.value || '').trim().slice(0,24);
+  if (verified){
+    modalCity.n = modalCity.n || verified.name;
+    modalCity.av = verified.avatar || undefined;
+  } else if (!pFid.value.trim()){
+    modalCity.av = undefined;   // ID cleared -> drop stale avatar
+  }
+  closeCityModal();
+  requestDraw(); autosave();
+};
+document.getElementById('pCancel').onclick = closeCityModal;
+modalBg.addEventListener('pointerdown', e=>{ if (e.target===modalBg) closeCityModal(); });
+pFid.addEventListener('keydown', e=>{ if (e.key==='Enter') document.getElementById('pVerify').click(); });
+pManual.addEventListener('keydown', e=>{ if (e.key==='Enter') document.getElementById('pSave').click(); });
+
+window.addEventListener('keydown', e=>{
+  if (modalBg.classList.contains('open')){
+    if (e.key==='Escape') closeCityModal();
+    return;
+  }
+  if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey||e.metaKey) && k==='z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
+  if ((e.ctrlKey||e.metaKey) && (k==='y' || (k==='z'&&e.shiftKey))){ e.preventDefault(); redo(); return; }
+  if (k==='v') setTool('select');
+  else if (k==='h') setTool('pan');
+  else if (k==='e') setTool('erase');
+  else if (k==='escape') setTool('select');
+  else if ((k==='delete'||k==='backspace') && selected){
+    pushHistory();
+    state.objects = state.objects.filter(o=>o!==selected);
+    selected = null; terrDirty=true; renderAlliances(); requestDraw(); autosave();
+  }
+});
+
+/* =============== sidebar UI =============== */
+const allianceList = document.getElementById('allianceList');
+function renderAlliances(){
+  allianceList.innerHTML = '';
+  for (const a of state.alliances){
+    const row = document.createElement('div');
+    row.className = 'al' + (a.id===state.active?' active':'');
+    const cnt = state.objects.filter(o=>o.a===a.id).length;
+
+    const col = document.createElement('input');
+    col.type='color'; col.value=a.color;
+    col.oninput = ()=>{ a.color=col.value; terrDirty=true; requestDraw(); autosave(); };
+    col.onclick = ev=>ev.stopPropagation();
+
+    const nm = document.createElement('input');
+    nm.type='text'; nm.value=a.name; nm.maxLength=20;
+    nm.onchange = ()=>{ a.name=nm.value.trim()||'Alliance'; autosave(); };
+    nm.onclick = ev=>ev.stopPropagation();
+
+    const c = document.createElement('span');
+    c.className='cnt'; c.textContent = cnt;
+
+    const eye = document.createElement('button');
+    eye.className='ic'; eye.title='Show / hide';
+    eye.innerHTML = a.visible ? '&#128065;' : '&#8212;';
+    eye.onclick = ev=>{ ev.stopPropagation(); a.visible=!a.visible; renderAlliances(); requestDraw(); autosave(); };
+
+    const del = document.createElement('button');
+    del.className='ic'; del.title='Delete alliance'; del.innerHTML='&#10006;';
+    del.onclick = ev=>{
+      ev.stopPropagation();
+      if (!confirm(`Delete "${a.name}" and its ${cnt} buildings?`)) return;
+      pushHistory();
+      state.objects = state.objects.filter(o=>o.a!==a.id);
+      state.alliances = state.alliances.filter(x=>x!==a);
+      if (state.active===a.id) state.active = state.alliances[0]?.id ?? null;
+      terrDirty=true; renderAlliances(); requestDraw(); autosave();
+    };
+
+    row.append(col, nm, c, eye, del);
+    row.onclick = ()=>{ state.active=a.id; renderAlliances(); };
+    allianceList.appendChild(row);
+  }
+}
+document.getElementById('btnAddAlliance').onclick = ()=>{
+  pushHistory();
+  const n = state.alliances.length;
+  addAlliance('Alliance '+(n+1), AL_COLORS[n%AL_COLORS.length]);
+  state.active = state.alliances[state.alliances.length-1].id;
+  renderAlliances(); autosave();
+};
+
+function renderPalettes(){
+  const pa = document.getElementById('palAlliance'), pn = document.getElementById('palNeutral');
+  pa.innerHTML=''; pn.innerHTML='';
+  for (const t in TYPE_DEFS){
+    const d = TYPE_DEFS[t];
+    const b = document.createElement('button');
+    b.dataset.t = t;
+    const covTxt = state.types[t].coverage>0 ? ` +${state.types[t].coverage}` : '';
+    b.innerHTML = `<span class="sw" style="background:${d.cat==='neutral'?d.color:'linear-gradient(135deg,#4da3ff,#ff6b6b)'}"></span>
+      ${d.label} <span class="sz">${state.types[t].size}×${state.types[t].size}${covTxt}</span>`;
+    b.onclick = ()=> setTool('place', t);
+    (d.cat==='alliance'?pa:pn).appendChild(b);
+  }
+}
+
+function renderSettings(){
+  document.getElementById('setGrid').value = state.grid;
+  document.getElementById('setOpacity').value = state.opacity;
+  document.getElementById('setRot').checked = state.rot;
+  document.getElementById('setMarch').value = state.marchSpd;
+  document.getElementById('setProxy').value = state.proxy || '';
+  const ts = document.getElementById('typeSettings');
+  ts.innerHTML = '';
+  for (const t in TYPE_DEFS){
+    const wrap = document.createElement('div');
+    wrap.className='set';
+    const lb = document.createElement('span'); lb.textContent = TYPE_DEFS[t].label;
+    const sz = document.createElement('input');
+    sz.type='number'; sz.min=1; sz.max=14; sz.value=state.types[t].size; sz.title='Footprint (tiles)';
+    sz.onchange = ()=>{ state.types[t].size = clampI(sz.value,1,14); terrDirty=true; renderPalettes(); requestDraw(); autosave(); };
+    wrap.append(lb, sz);
+    if (TYPE_DEFS[t].coverage>0 || t==='hq' || t==='banner'){
+      const cvg = document.createElement('input');
+      cvg.type='number'; cvg.min=0; cvg.max=40; cvg.value=state.types[t].coverage; cvg.title='Territory coverage radius (tiles)';
+      cvg.onchange = ()=>{ state.types[t].coverage = clampI(cvg.value,0,40); terrDirty=true; renderPalettes(); requestDraw(); autosave(); };
+      wrap.append(cvg);
+    }
+    ts.appendChild(wrap);
+  }
+}
+function clampI(v,lo,hi){ v = parseInt(v)||lo; return Math.max(lo, Math.min(hi, v)); }
+
+document.getElementById('setGrid').onchange = e=>{
+  state.grid = clampI(e.target.value, 200, 3000);
+  e.target.value = state.grid;
+  terrDirty = true; requestDraw(); autosave();
+};
+document.getElementById('setOpacity').oninput = e=>{ state.opacity = +e.target.value; requestDraw(); autosave(); };
+document.getElementById('setRot').onchange = e=>{ state.rot = e.target.checked; updAngle(); requestDraw(); autosave(); };
+document.getElementById('setMarch').onchange = e=>{ state.marchSpd = clampI(e.target.value, 1, 600); e.target.value = state.marchSpd; requestDraw(); autosave(); };
+document.getElementById('setProxy').onchange = e=>{ state.proxy = e.target.value.trim(); goodRoute = null; autosave(); };
+
+document.getElementById('toolSelect').onclick = ()=>setTool('select');
+document.getElementById('toolPan').onclick   = ()=>setTool('pan');
+document.getElementById('toolErase').onclick = ()=>setTool('erase');
+const btnUndo = document.getElementById('btnUndo'), btnRedo = document.getElementById('btnRedo');
+btnUndo.onclick = undo; btnRedo.onclick = redo;
+document.getElementById('btnCenter').onclick = fitLayout;
+document.getElementById('menuBtn').onclick = ()=>document.getElementById('sidebar').classList.toggle('open');
+
+document.getElementById('btnClear').onclick = ()=>{
+  if (!confirm('Remove ALL buildings and landmarks?')) return;
+  pushHistory();
+  state.objects = []; selected=null; terrDirty=true;
+  renderAlliances(); requestDraw(); autosave();
+};
+
+/* =============== save / load / autosave =============== */
+function serialize(){
+  return JSON.stringify({v:4, grid:state.grid, opacity:state.opacity, rot:state.rot, marchSpd:state.marchSpd,
+    proxy:state.proxy, types:state.types, alliances:state.alliances, objects:state.objects, active:state.active});
+}
+function deserialize(json){
+  const d = JSON.parse(json);
+  if (!d || !Array.isArray(d.alliances) || !Array.isArray(d.objects)) throw new Error('bad file');
+  state.grid = clampI(d.grid||1200, 200, 3000);
+  state.opacity = d.opacity ?? 25;
+  state.rot = d.rot ?? true;
+  state.marchSpd = clampI(d.marchSpd ?? 60, 1, 600);
+  state.proxy = typeof d.proxy==='string' ? d.proxy : '';
+  for (const k in TYPE_DEFS){
+    if (d.types && d.types[k]){
+      state.types[k].size = clampI(d.types[k].size, 1, 14);
+      state.types[k].coverage = clampI(d.types[k].coverage ?? 0, 0, 40);
+    }
+  }
+  state.alliances = d.alliances.filter(a=>a && a.id && a.color);
+  state.objects = d.objects.filter(o=>o && TYPE_DEFS[o.t] && Number.isFinite(o.x) && Number.isFinite(o.y));
+  state.active = d.active && state.alliances.some(a=>a.id===d.active) ? d.active : (state.alliances[0]?.id ?? null);
+  for (const it of [...state.alliances, ...state.objects]){
+    const m = /^[ao](\d+)$/.exec(it.id); if (m) uid = Math.max(uid, +m[1]+1);
+  }
+  selected = null; terrDirty = true; updAngle();
+}
+
+document.getElementById('btnSave').onclick = ()=>{
+  const blob = new Blob([serialize()], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'kingshot-layout.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+};
+const fileInput = document.getElementById('fileInput');
+document.getElementById('btnLoad').onclick = ()=>fileInput.click();
+fileInput.onchange = ()=>{
+  const f = fileInput.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      pushHistory();
+      deserialize(r.result);
+      renderAlliances(); renderPalettes(); renderSettings(); fitLayout(); autosave();
+      toast('Layout loaded');
+    }catch(err){ toast('Could not read that file'); undoStack.pop(); updateHistBtns(); }
+  };
+  r.readAsText(f);
+  fileInput.value = '';
+};
+
+let saveTimer = null;
+function autosave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ try{ localStorage.setItem('ksLayoutPlanner', serialize()); }catch(_){} }, 400);
+}
+
+/* =============== PNG export =============== */
+document.getElementById('btnPng').onclick = ()=>{
+  const b = layoutBounds();
+  if (!b){ toast('Nothing to export yet'); return; }
+  updAngle();
+  const m = 4;
+  const x0 = Math.max(0, Math.floor(b.x0)-m), y0 = Math.max(0, Math.floor(b.y0)-m);
+  const x1 = Math.min(state.grid, Math.ceil(b.x1)+m), y1 = Math.min(state.grid, Math.ceil(b.y1)+m);
+  const wT = x1-x0, hT = y1-y0;
+  const mx = (x0+x1)/2, my = (y0+y1)/2;
+  const spanW = state.rot ? (wT+hT)*Math.SQRT1_2 : wT;
+  const spanH = state.rot ? (wT+hT)*Math.SQRT1_2 : hT;
+  const px = Math.max(3, Math.min(24, Math.floor(3600/Math.max(spanW,spanH))));
+  const W = Math.ceil(spanW*px), H = Math.ceil(spanH*px);
+  const c = document.createElement('canvas'); c.width=W; c.height=H;
+  const g = c.getContext('2d');
+  g.fillStyle = '#10141a'; g.fillRect(0,0,W,H);
+
+  const exMap = (wx,wy)=>{
+    const dx = wx-mx, dy = wy-my;
+    return {x: W/2 + (dx*cA - dy*sA)*px, y: H/2 + (dx*sA + dy*cA)*px};
+  };
+  const exWorld = ()=>{
+    g.setTransform(1,0,0,1,0,0);
+    g.translate(W/2,H/2); g.rotate(A); g.scale(px,px); g.translate(-mx,-my);
+  };
+
+  if (terrDirty) rebuildTerritories();
+  exWorld();
+  g.save();
+  g.beginPath(); g.rect(x0,y0,wT,hT); g.clip();
+  g.fillStyle = '#161c25'; g.fillRect(x0,y0,wT,hT);
+  g.imageSmoothingEnabled = false;
+  g.globalAlpha = state.opacity/100;
+  for (const a of state.alliances){
+    if (!a.visible) continue;
+    const tc = terrCanvases.get(a.id);
+    if (tc) g.drawImage(tc, 0, 0);
+  }
+  g.globalAlpha = 1;
+  // tile grid (only if it won't be pure noise) + 10-tile grid
+  if (px >= 6){
+    g.strokeStyle = 'rgba(255,255,255,.04)'; g.lineWidth = 1/px;
+    g.beginPath();
+    for (let x=x0; x<=x1; x++){ g.moveTo(x,y0); g.lineTo(x,y1); }
+    for (let y=y0; y<=y1; y++){ g.moveTo(x0,y); g.lineTo(x1,y); }
+    g.stroke();
+  }
+  g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1/px;
+  g.beginPath();
+  for (let x=Math.ceil(x0/10)*10; x<=x1; x+=10){ g.moveTo(x,y0); g.lineTo(x,y1); }
+  for (let y=Math.ceil(y0/10)*10; y<=y1; y+=10){ g.moveTo(x0,y); g.lineTo(x1,y); }
+  g.stroke();
+  g.restore();
+  exWorld();
+  for (const o of state.objects){
+    if (isHidden(o)) continue;
+    drawShape(g, o, px, false);
+  }
+
+  // labels upright (EXPORTING skips CORS-tainted avatars so the canvas stays exportable)
+  g.setTransform(1,0,0,1,0,0);
+  const saveCw = cw, saveCh = chh;
+  cw = 1e9; chh = 1e9;   // disable screen culling inside drawLabel
+  EXPORTING = true;
+  try{
+    for (const o of state.objects){
+      if (isHidden(o)) continue;
+      drawLabel(g, o, exMap, px);
+    }
+  } finally { EXPORTING = false; cw = saveCw; chh = saveCh; }
+
+  // legend
+  g.font = 'bold 15px system-ui'; g.textAlign='left'; g.textBaseline='top';
+  const vis = state.alliances.filter(a=>a.visible);
+  const lh = 24, pad = 10;
+  let lw = 190;
+  for (const a of vis) lw = Math.max(lw, g.measureText(a.name).width + 46);
+  g.fillStyle = 'rgba(10,13,18,.8)';
+  g.fillRect(8, 8, lw, vis.length*lh + pad*2 + 20);
+  g.fillStyle = '#dce4ee';
+  g.fillText(`Kingshot layout — tiles ${x0},${y0} → ${x1},${y1}`, 16, 14);
+  vis.forEach((a,i)=>{
+    g.fillStyle = a.color;
+    g.fillRect(16, 38+i*lh, 14, 14);
+    g.fillStyle = '#dce4ee';
+    g.fillText(a.name, 38, 37+i*lh);
+  });
+
+  try{
+    c.toBlob(blob=>{
+      if (!blob){ toast('PNG export failed'); return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'kingshot-layout.png';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    });
+    toast('PNG exported');
+  }catch(err){
+    toast('Export blocked by avatar images — remove avatars or try again');
+  }
+};
+
+/* =============== misc =============== */
+let toastTimer=null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =============== boot =============== */
+(function init(){
+  let restored = false;
+  try{
+    const s = localStorage.getItem('ksLayoutPlanner');
+    if (s){ deserialize(s); restored = true; }
+  }catch(_){}
+  if (!restored){
+    addAlliance('Alliance 1', AL_COLORS[0]);
+    addAlliance('Alliance 2', AL_COLORS[1]);
+  }
+  updAngle();
+  renderAlliances(); renderPalettes(); renderSettings();
+  updateHistBtns();
+  resize();
+  centerOn(state.grid/2, state.grid/2, 8);
+  if (restored && state.objects.length) fitLayout();
+  setTool('select');
+})();
+</script>
+</body>
+</html>

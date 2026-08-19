@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kingshot — HQ &amp; Bear Trap Placement (Real Map Data)</title>
+<style>
+  :root { color-scheme: light dark; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --plane:          #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --hq:             #2a78d6;
+    --trap:           #eb6834;
+    --ring1:          #1baf7a;
+    --ring2:          #b8b7ae;
+    --ring3:          #d4d3cb;
+    --outer:          #eceb e4;
+    --castle:         #0b0b0b;
+    --zone-badlands:  #f0efec;
+    --zone-plains:    #e7ecdf;
+    --zone-fertile:   #dde9d6;
+    --hq-soft:        rgba(42,120,214,0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --plane:          #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --hq:             #3987e5;
+      --trap:           #d95926;
+      --ring1:          #199e70;
+      --ring2:          #52514e;
+      --ring3:          #3a3a37;
+      --castle:         #ffffff;
+      --zone-badlands:  #22221f;
+      --zone-plains:    #24281f;
+      --zone-fertile:   #273022;
+      --hq-soft:        rgba(57,135,229,0.22);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--plane); color: var(--text-primary); padding: 28px 20px 48px; }
+  .viz-root { max-width: 1060px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 13.5px; margin-top: 6px; max-width: 76ch; line-height: 1.5; }
+  .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 20px 20px 16px; margin-top: 22px; }
+  .panel h2 { font-size: 15px; font-weight: 650; }
+  .panel .note { color: var(--text-secondary); font-size: 12.5px; margin: 5px 0 14px; line-height: 1.5; max-width: 84ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 12px 0 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+  .sw.dot { border-radius: 50%; }
+  .sw.outline { background: none; border: 2px dashed var(--muted); }
+  svg { display: block; width: 100%; height: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 10px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 10px; border-bottom: 1px solid var(--baseline); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; line-height: 1.45; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tag { font-size: 10.5px; font-weight: 650; letter-spacing: 0.03em; border-radius: 4px; padding: 1.5px 6px; }
+  .tag.c { color: #006300; background: rgba(12,163,12,0.12); }
+  .tag.l { color: var(--text-secondary); background: rgba(137,135,129,0.16); }
+  .tag.g { color: #a15c00; background: rgba(237,161,0,0.14); }
+  @media (prefers-color-scheme: dark) { .tag.c { color: #0ca30c; } .tag.g { color: #eda100; } }
+  .foot { color: var(--muted); font-size: 11.5px; margin-top: 18px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Kingshot — HQ &amp; Bear Trap Placement, from Real Map Data</h1>
+  <p class="sub">Built from the extracted in-game template map (1200×1200): all 91 permanent structures at exact coordinates, true zone boundaries (Plains 300–899, Fertile Lands 450–749, King's Castle at 597,597). Openness = distance from the hive footprint to the nearest permanent structure, computed over every legal placement. The four best pockets hug the north and south Fertile borders, offset from the cardinal Fortress axis.</p>
+
+  <div class="panel">
+    <h2>1 · The real map — the four most open HQ pockets</h2>
+    <p class="note">Every permanent structure plotted at its actual coordinates. The dashed squares show each pocket's measured clear zone (no permanent structure within 83–90 tiles of the hive edge). The east and west Plains bands are more cluttered (Arsenal, Armory, Builder's Guild chains) — north/south win. All four pockets keep the HQ on legal Plains ground within ~5 tiles of the Fertile border, so banners capture Fertile-side nodes almost immediately. Pick the pocket in your alliance's spawn quadrant; they're near-equivalent (A is the single most open, C/D are ~20 tiles closer to the Castle).</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--zone-badlands); border:1px solid var(--baseline)"></span>Badlands</span>
+      <span><span class="sw" style="background:var(--zone-plains); border:1px solid var(--baseline)"></span>Plains (300–899)</span>
+      <span><span class="sw" style="background:var(--zone-fertile); border:1px solid var(--baseline)"></span>Fertile Lands (450–749) — no HQ</span>
+      <span><span class="sw dot" style="background:var(--castle)"></span>King's Castle (597,597)</span>
+      <span><span class="sw dot" style="background:var(--trap)"></span>Fortress ×4</span>
+      <span><span class="sw dot" style="background:var(--muted)"></span>Sanctuary ×12</span>
+      <span><span class="sw dot" style="background:var(--baseline); width:9px; height:9px"></span>Outposts ×74</span>
+      <span><span class="sw" style="background:var(--hq)"></span>Hive pocket A–D</span>
+      <span><span class="sw outline"></span>Measured clear zone</span>
+    </div>
+    <svg id="worldmap" viewBox="-100 -46 1350 1330" role="img" aria-label="Kingshot template map with all permanent structures and four recommended hive pockets"></svg>
+  </div>
+
+  <div class="panel">
+    <h2>2 · Hive core v2 — traps as twin islands, HQ out of the prime ring</h2>
+    <p class="note">Correction from v1: the HQ no longer sits between the traps — trap-adjacent tiles are the highest-value real estate and the HQ gains nothing from them. Two traps, centers 14 tiles apart, each with three full unbroken rings of 2×2 cities; the shared middle column is premium (ring-2/3 of <em>both</em> traps). HQ moves to the top edge, offset toward the Fertile border and the Castle. This grid holds <strong>24 ring-1 slots (≤3 tiles), 40 ring-2 (≤5), 48 ring-3 (≤7)</strong> — 112 cities within 7 tiles of a trap, so a full 100-member alliance fits inside the 3-ring envelope with 12 slots spare.</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--trap)"></span>Bear Trap 1 &amp; 2 · 3×3</span>
+      <span><span class="sw" style="background:var(--hq)"></span>Alliance HQ · 3×3 (edge, not center)</span>
+      <span><span class="sw" style="background:var(--ring1)"></span>Ring 1 · ≤3 tiles · rally captains (24)</span>
+      <span><span class="sw" style="background:var(--ring2)"></span>Ring 2 · ≤5 tiles (40)</span>
+      <span><span class="sw" style="background:var(--ring3)"></span>Ring 3 · ≤7 tiles (48)</span>
+      <span><span class="sw outline" style="border-color:var(--hq)"></span>Banner spokes</span>
+    </div>
+    <svg id="hive" viewBox="0 0 884 728" role="img" aria-label="Dumbbell hive layout: two bear trap islands with concentric city rings and HQ on the top edge"></svg>
+  </div>
+
+
+  <div class="panel">
+    <h2>3 &middot; The trap-packing debate, settled: flush swirl beats banner-padding &mdash; but by seconds</h2>
+    <p class="note">Both camps simulated exhaustively: 2&times;2 TCs packed around a 3&times;3 trap, (left) padded to 4&times;4 with 7 banners so TCs tile evenly, vs (right) TCs pushed flush with each side offset one tile from the next &mdash; the swirl. Every legal placement was enumerated and cities ranked by center-to-center march distance. <strong>The swirl's 8 flush cities sit at 2.55&ndash;2.92 tiles while banner-padding&rsquo;s 8th-closest city is at 3.81; within 5 tiles the swirl fits 20 TCs vs 16, within 7 tiles 36 vs 35. Rank by rank it is equal or better at 104 of the first 110 positions, and never worse by more than 0.23 tiles.</strong> The padded block can&rsquo;t win: its banners physically occupy seven flush tiles that swirl gives to real cities, and banners next to a trap confer no buff. But keep the magnitude honest &mdash; the worst-case gap is 0.89 tiles, roughly 2&ndash;3 seconds one-way, 5&ndash;6 round-trip. Over a 30-minute Bear Hunt with 60&ndash;120s rally cycles that is at most one extra rally for a handful of members. Swirl wins; nobody should switch servers over it.</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--trap)"></span>Bear Trap 3&times;3</span>
+      <span><span class="sw" style="background:var(--muted)"></span>Banner pad (7&times; 1&times;1)</span>
+      <span><span class="sw" style="background:var(--ring1)"></span>TC &le;3.6 tiles</span>
+      <span><span class="sw" style="background:var(--ring2)"></span>TC &le;5.5 tiles</span>
+      <span><span class="sw" style="background:var(--ring3)"></span>TC &le;8.8 tiles</span>
+    </div>
+    <div class="cols2" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div><p class="note" style="margin:8px 0 4px;font-weight:650;color:var(--text-primary)">A &middot; Banner-pad to 4&times;4, exact aligned lattice &mdash; 16 TCs &le;5 tiles</p><svg id="packA" viewBox="0 0 456 456"></svg></div>
+      <div><p class="note" style="margin:8px 0 4px;font-weight:650;color:var(--text-primary)">B &middot; Flush swirl &mdash; 20 TCs &le;5 tiles &#10003; winner</p><svg id="packB" viewBox="0 0 456 456"></svg></div>
+    </div>
+    <table aria-label="March distance by closeness rank">
+      <thead><tr><th>Closeness rank</th><th>A &middot; banner-pad</th><th>B &middot; swirl</th><th>Swirl saves (1-way)</th><th>~Time saved @3 s/tile</th></tr></thead>
+      <tbody>
+        <tr><td>1st&ndash;4th TC</td><td class="num">2.55 &ndash; 2.92 t</td><td class="num">2.55 t</td><td class="num">0 &ndash; 0.37 t</td><td class="num">0 &ndash; 1.1 s</td></tr>
+        <tr><td>5th&ndash;8th TC</td><td class="num">3.54 &ndash; 3.81 t</td><td class="num">2.92 t</td><td class="num">0.62 &ndash; 0.89 t</td><td class="num">1.9 &ndash; 2.7 s</td></tr>
+        <tr><td>9th&ndash;20th TC</td><td class="num">4.30 &ndash; 5.52 t</td><td class="num">4.30 &ndash; 4.74 t</td><td class="num">&minus;0.23 &ndash; +0.78 t</td><td class="num">&minus;0.7 &ndash; +2.3 s</td></tr>
+        <tr><td>21st&ndash;60th TC</td><td class="num">up to 8.86 t</td><td class="num">up to 8.75 t</td><td class="num">0 &ndash; 0.41 t</td><td class="num">0 &ndash; 1.2 s</td></tr>
+        <tr><td>Mean, 60-member hive</td><td class="num">6.32 t &middot; ~19.0 s</td><td class="num">6.14 t &middot; ~18.4 s</td><td class="num">0.17 t</td><td class="num">~0.5 s/march</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:10px">March-time model: time &asymp; distance &times; a constant seconds-per-tile; the constant depends on troop type and march-speed buffs. Calibrate yours once: time a single march to the trap from a known distance, divide, and multiply every figure above. At any realistic constant (2&ndash;4 s/tile) the verdict is unchanged. Layout A is drawn as the exact even lattice its proponents describe &mdash; every TC on the 2-tile grid aligned to the 4&times;4 block; an earlier draft showed a staggered variant produced by the simulator's tie-breaking, which has identical march distances at every rank but misrepresented the concept visually.</p>
+  </div>
+
+  <div class="panel">
+    <h2>4 · Exact numbers</h2>
+    <table aria-label="Recommended pockets and verified constants">
+      <thead><tr><th>Item</th><th>Value</th><th>Confidence</th></tr></thead>
+      <tbody>
+        <tr><td>Pocket A (best)</td><td class="num">hive center (707, 432) · openness 90 · castle 198 · S border, E of Fortress 3</td><td><span class="tag c">Computed</span></td></tr>
+        <tr><td>Pocket B</td><td class="num">hive center (492, 428) · openness 86 · castle 199 · S border, W side</td><td><span class="tag c">Computed</span></td></tr>
+        <tr><td>Pocket C</td><td class="num">hive center (705, 770) · openness 83 · castle 204 · N border, E side</td><td><span class="tag c">Computed</span></td></tr>
+        <tr><td>Pocket D</td><td class="num">hive center (492, 766) · openness 86 · castle 199 · N border, W side</td><td><span class="tag c">Computed</span></td></tr>
+        <tr><td>Pocket A build order</td><td class="num">Trap 1 (700,430) · Trap 2 (714,430) · HQ (707,440), 3×3 centered, all on Plains</td><td><span class="tag c">Computed</span></td></tr>
+        <tr><td>Zone boundaries</td><td class="num">Plains 300–899 · Fertile 450–749 · map 1200×1200 · Castle (597,597)</td><td><span class="tag c">Certain</span></td></tr>
+        <tr><td>Fortresses</td><td class="num">(597,400) (400,597) (800,597) (597,800) — cardinal axes, Plains ring</td><td><span class="tag c">Certain</span></td></tr>
+        <tr><td>Footprints</td><td class="num">HQ 3×3 · Trap 3×3 · city 2×2 · banner 1×1</td><td><span class="tag c">Certain</span></td></tr>
+        <tr><td>Territory coverage</td><td class="num">HQ projects 15×15 · each banner 7×7</td><td><span class="tag l">Likely</span></td></tr>
+        <tr><td>HQ zone rule</td><td>Badlands + Plains only — never Fertile (official). Traps/cities on Fertile territory: unconfirmed</td><td><span class="tag c">Certain</span> / <span class="tag g">Guessing</span></td></tr>
+        <tr><td>Castle no-settle zone</td><td class="num">±30 tiles assumed around (597,597) — verify Forbidden Zone size in-game</td><td><span class="tag g">Guessing</span></td></tr>
+        <tr><td>Not in dataset</td><td>Wild resource fields, Alliance Iron deposit positions, decorative terrain — scout the pocket in-game for 2 minutes before committing</td><td><span class="tag g">Gap</span></td></tr>
+      </tbody>
+    </table>
+    <p class="foot">Structure coordinates: nog3/kingshotmap (GeoJSON of the in-game template map, GPL). Zone rules: Century Games help center. Footprints &amp; territory sizes: ksmapper.pages.dev / kingshotguide.org map builders. Openness = Chebyshev distance from a 34×26 hive rectangle to the nearest permanent structure, maximized over all legal placements (HQ on Plains ground).</p>
+  </div>
+</div>
+
+<script>
+// ---------- Panel 1: real map ----------
+(function () {
+  var S = [/* type,x,y  t: c=castle f=fortress s=sanctuary o=outpost */];
+  var raw = {"c":[[597,597]],"f":[[597,800],[400,597],[597,400],[800,597]],"s":[[237,828],[846,957],[606,957],[366,957],[237,606],[237,348],[366,237],[588,237],[846,237],[957,348],[957,606],[957,828]],"o":[[738,957],[816,717],[138,537],[237,768],[438,267],[537,1038],[666,138],[957,438],[1068,666],[387,717],[588,327],[138,438],[138,867],[366,138],[438,1068],[867,138],[867,1068],[1068,867],[1068,327],[387,486],[588,867],[816,486],[138,138],[138,666],[138,1038],[537,138],[1068,567],[327,666],[486,327],[768,867],[867,567],[666,1068],[1068,1068],[1068,138],[138,747],[486,138],[486,957],[768,237],[768,1038],[957,747],[1068,486],[87,666],[138,237],[267,1068],[537,87],[636,1137],[957,138],[1068,936],[1137,567],[327,567],[486,867],[768,327],[867,666],[138,327],[138,957],[237,138],[327,1038],[769,138],[957,1068],[1068,747],[1068,237],[237,487],[237,237],[237,957],[267,537],[666,267],[936,537],[957,237],[327,867],[327,327],[867,867],[867,327],[957,957],[537,936]]};
+  var svg = document.getElementById('worldmap');
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;}
+  function Y(y){ return 1200 - y; }   // draw with game-Y pointing up
+  // zones
+  el('rect',{x:0,y:0,width:1200,height:1200,fill:'var(--zone-badlands)',stroke:'var(--baseline)','stroke-width':2});
+  el('rect',{x:300,y:Y(899),width:599,height:599,fill:'var(--zone-plains)',stroke:'var(--baseline)','stroke-width':2});
+  el('rect',{x:450,y:Y(749),width:299,height:299,fill:'var(--zone-fertile)',stroke:'var(--baseline)','stroke-width':2});
+  // castle no-settle estimate
+  el('rect',{x:567,y:Y(627),width:60,height:60,fill:'none',stroke:'var(--muted)','stroke-width':2,'stroke-dasharray':'8 6'});
+  // axes ticks
+  [0,300,600,900,1200].forEach(function(t){
+    el('text',{x:t,y:1236,'font-size':26,fill:'var(--muted)','text-anchor':'middle','font-family':'system-ui'}).textContent=t;
+    el('text',{x:-12,y:Y(t)+9,'font-size':26,fill:'var(--muted)','text-anchor':'end','font-family':'system-ui'}).textContent=t;
+  });
+  // structures
+  raw.o.forEach(function(p){ el('circle',{cx:p[0],cy:Y(p[1]),r:7,fill:'var(--baseline)'}); });
+  raw.s.forEach(function(p){ el('circle',{cx:p[0],cy:Y(p[1]),r:11,fill:'var(--muted)'}); });
+  raw.f.forEach(function(p){ el('circle',{cx:p[0],cy:Y(p[1]),r:12,fill:'var(--trap)'}); });
+  el('rect',{x:597-13,y:Y(597)-13,width:26,height:26,rx:4,fill:'var(--castle)'});
+  el('text',{x:597,y:Y(597)-40,'font-size':28,'font-weight':650,fill:'var(--text-primary)','text-anchor':'middle','font-family':'system-ui'}).textContent="King's Castle";
+  // fortress labels
+  var fl=[['F1',597,800,-30,10],['F2',400,597,-30,8],['F3',597,400,-30,10],['F4',800,597,32,8]];
+  fl.forEach(function(f){ el('text',{x:f[1]+f[3],y:Y(f[2])+f[4],'font-size':24,fill:'var(--text-secondary)','text-anchor':'middle','font-family':'system-ui'}).textContent=f[0]; });
+  // pockets: [label, cx, cy, openness]
+  var pockets=[['A',707,432,90],['B',492,428,86],['C',705,770,83],['D',492,766,86]];
+  pockets.forEach(function(p){
+    var cx=p[1], cy=p[2], o=p[3];
+    // clear zone (openness square around hive rect: hive 34x26 + o each side)
+    el('rect',{x:cx-17-o,y:Y(cy)-13-o,width:34+2*o,height:26+2*o,rx:10,fill:'var(--hq-soft)',stroke:'var(--hq)','stroke-width':2,'stroke-dasharray':'8 6',opacity:0.85});
+    el('rect',{x:cx-17,y:Y(cy)-13,width:34,height:26,rx:4,fill:'var(--hq)'});
+    el('text',{x:cx,y:Y(cy)-24,'font-size':30,'font-weight':700,fill:'var(--hq)','text-anchor':'middle','font-family':'system-ui'}).textContent=p[0];
+    el('text',{x:cx,y:Y(cy)+46,'font-size':22,fill:'var(--text-secondary)','text-anchor':'middle','font-family':'system-ui'}).textContent='('+cx+','+cy+')';
+  });
+})();
+
+// ---------- Panel 2: dumbbell hive ----------
+(function () {
+  var T=26, W=34, H=26;
+  var T1={x:10,y:13}, T2={x:24,y:13}, HQ={x:17,y:3};   // centers, 3x3 each
+  var svg=document.getElementById('hive');
+  var NS='http://www.w3.org/2000/svg';
+  function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;}
+  var grid=el('g',{stroke:'var(--grid)','stroke-width':1});
+  for(var x=0;x<=W;x++) el('line',{x1:x*T,y1:0,x2:x*T,y2:H*T},grid);
+  for(var y=0;y<=H;y++) el('line',{x1:0,y1:y*T,x2:W*T,y2:y*T},grid);
+  function foot(c){var s={};for(var i=c.x-1;i<=c.x+1;i++)for(var j=c.y-1;j<=c.y+1;j++)s[i+','+j]=1;return s;}
+  var blocked=Object.assign({},foot(T1),foot(T2),foot(HQ));
+  function rect3(c,fill,label){
+    el('rect',{x:(c.x-1)*T+2,y:(c.y-1)*T+2,width:3*T-4,height:3*T-4,rx:5,fill:fill});
+    label.split('\n').forEach(function(ln,i,arr){
+      el('text',{x:c.x*T+T/2,y:c.y*T+T/2+(i-(arr.length-1)/2)*14+4,'text-anchor':'middle','font-size':12.5,'font-weight':650,fill:'#fff','font-family':'system-ui'}).textContent=ln;
+    });
+  }
+  // ring shading zones behind cities (subtle outlines at 3/5/7 tiles from trap centers)
+  [T1,T2].forEach(function(c){
+    [3.5,5.5,7.5].forEach(function(r,i){
+      el('rect',{x:(c.x-r-0.5)*T,y:(c.y-r-0.5)*T,width:(2*r+1)*T,height:(2*r+1)*T,rx:8,fill:'none',stroke:'var(--baseline)','stroke-width':1,'stroke-dasharray':'2 4',opacity:0.7});
+    });
+  });
+  // cities
+  var counts={1:0,2:0,3:0,o:0};
+  for(var sx=1;sx<W-1;sx+=2){
+    for(var sy=1;sy<H-1;sy+=2){
+      var hit=false;
+      for(var i=sx;i<sx+2&&!hit;i++)for(var j=sy;j<sy+2;j++)if(blocked[i+','+j]){hit=true;break;}
+      if(hit)continue;
+      var cx=sx+0.5, cy=sy+0.5;
+      var d=Math.min(Math.max(Math.abs(cx-T1.x),Math.abs(cy-T1.y)),Math.max(Math.abs(cx-T2.x),Math.abs(cy-T2.y)));
+      var ring=d<=3.5?1:d<=5.5?2:d<=7.5?3:'o';
+      counts[ring]++;
+      var fill=ring===1?'var(--ring1)':ring===2?'var(--ring2)':ring===3?'var(--ring3)':'none';
+      var stroke=ring==='o'?'var(--grid)':'none';
+      el('rect',{x:sx*T+2,y:sy*T+2,width:2*T-4,height:2*T-4,rx:4,fill:fill==='none'?'transparent':fill,stroke:stroke,'stroke-width':ring==='o'?1.5:0});
+    }
+  }
+  rect3(T1,'var(--trap)','TRAP\n1'); rect3(T2,'var(--trap)','TRAP\n2'); rect3(HQ,'var(--hq)','HQ');
+  // banner spokes
+  [[HQ.x,0.0],[1,HQ.y],[W-2,HQ.y]].forEach(function(p){
+    el('rect',{x:p[0]*T+5,y:p[1]*T+5,width:T-10,height:T-10,rx:3,fill:'none',stroke:'var(--hq)','stroke-width':2,'stroke-dasharray':'3 3'});
+  });
+  el('text',{x:(W*T)/2,y:H*T+22,'font-size':12,fill:'var(--text-secondary)','text-anchor':'middle','font-family':'system-ui'})
+    .textContent='HQ points toward the Fertile border / Castle · shared middle column is ring-2/3 of BOTH traps · '+(counts[1]+counts[2]+counts[3])+' cities within 7 tiles of a trap';
+})();
+
+// ---------- Panel 3: trap packing debate ----------
+(function () {
+  var DATA = {"A":[[-2,0,2.55],[0,-2,2.55],[2,-2,2.92],[-2,2,2.92],[4,0,3.54],[-2,-2,3.54],[0,4,3.54],[4,2,3.81],[2,4,3.81],[4,-2,4.3],[-2,4,4.3],[0,-4,4.53],[-4,0,4.53],[2,-4,4.74],[-4,2,4.74],[4,4,4.95],[-2,-4,5.15],[-4,-2,5.15],[0,6,5.52],[6,0,5.52],[2,6,5.7],[-4,4,5.7],[4,-4,5.7],[6,2,5.7],[6,-2,6.04],[-2,6,6.04],[-4,-4,6.36],[6,4,6.52],[-6,0,6.52],[0,-6,6.52],[4,6,6.52],[2,-6,6.67],[-6,2,6.67],[-2,-6,6.96],[-6,-2,6.96],[-4,6,7.11],[6,-4,7.11],[-6,4,7.38],[4,-6,7.38],[8,0,7.52],[0,8,7.52],[2,8,7.65],[8,2,7.65],[6,6,7.78],[8,-2,7.91],[-4,-6,7.91],[-6,-4,7.91],[-2,8,7.91],[8,4,8.28],[4,8,8.28],[6,-6,8.51],[0,-8,8.51],[-8,0,8.51],[-6,6,8.51],[2,-8,8.63],[-8,2,8.63],[8,-4,8.75],[-4,8,8.75]],"B":[[0,-2,2.55],[3,0,2.55],[1,3,2.55],[-2,1,2.55],[2,-2,2.92],[3,2,2.92],[-1,3,2.92],[-2,-1,2.92],[3,4,4.3],[-2,-3,4.3],[-3,3,4.3],[4,-2,4.3],[1,5,4.53],[-4,1,4.53],[5,0,4.53],[0,-4,4.53],[-4,-1,4.74],[2,-4,4.74],[-1,5,4.74],[5,2,4.74],[5,4,5.7],[-3,5,5.7],[4,-4,5.7],[-4,-3,5.7],[-5,3,6.04],[3,6,6.04],[-2,-5,6.04],[6,-2,6.04],[7,0,6.52],[-6,0,6.52],[1,7,6.52],[0,-6,6.52],[2,-6,6.67],[7,2,6.67],[-1,7,6.67],[-6,-2,6.96],[-5,5,7.11],[6,-4,7.11],[5,6,7.11],[-4,-5,7.11],[7,4,7.38],[4,-6,7.38],[-3,7,7.38],[-7,2,7.65],[8,-2,7.91],[-2,-7,7.91],[3,8,7.91],[-6,-4,7.91],[-7,4,8.28],[9,1,8.51],[1,9,8.51],[-5,7,8.51],[6,-6,8.51],[0,-8,8.51],[7,6,8.51],[-8,0,8.51],[-1,9,8.63],[2,-8,8.63],[8,-4,8.75],[-4,-7,8.75],[5,8,8.75]]};
+  var NS='http://www.w3.org/2000/svg';
+  function draw(id, key, banners) {
+    var svg=document.getElementById(id);
+    var T=24, O=9;  // tile px, origin offset (tile -O => 0)
+    function el(n,a,t){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);if(t!==undefined)e.textContent=t;return e;}
+    var g=el('g',{stroke:'var(--grid)','stroke-width':1});
+    for(var i=0;i<=19;i++){
+      var l1=document.createElementNS(NS,'line');l1.setAttribute('x1',i*T);l1.setAttribute('y1',0);l1.setAttribute('x2',i*T);l1.setAttribute('y2',456);g.appendChild(l1);
+      var l2=document.createElementNS(NS,'line');l2.setAttribute('x1',0);l2.setAttribute('y1',i*T);l2.setAttribute('x2',456);l2.setAttribute('y2',i*T);g.appendChild(l2);
+    }
+    function px(x){return (x+O)*T;}
+    // cities
+    DATA[key].forEach(function(c){
+      if(c[0]<-O||c[0]>19-O-2||c[1]<-O||c[1]>19-O-2) return;
+      var fill = c[2]<=3.6?'var(--ring1)':c[2]<=5.5?'var(--ring2)':'var(--ring3)';
+      el('rect',{x:px(c[0])+2,y:px(c[1])+2,width:2*T-4,height:2*T-4,rx:4,fill:fill});
+      var ink = c[2]<=3.6 ? '#fff' : 'var(--text-secondary)';
+      el('text',{x:px(c[0])+T,y:px(c[1])+T+4,'text-anchor':'middle','font-size':11,'font-weight':600,fill:ink,'font-family':'system-ui'}, c[2].toFixed(1));
+    });
+    // banners
+    if(banners) banners.forEach(function(b){
+      el('rect',{x:px(b[0])+4,y:px(b[1])+4,width:T-8,height:T-8,rx:3,fill:'var(--muted)'});
+    });
+    // trap on top
+    el('rect',{x:px(0)+2,y:px(0)+2,width:3*T-4,height:3*T-4,rx:5,fill:'var(--trap)'});
+    el('text',{x:px(0)+1.5*T,y:px(0)+1.5*T+4,'text-anchor':'middle','font-size':12,'font-weight':650,fill:'#fff','font-family':'system-ui'},'TRAP');
+  }
+  draw('packA','A',[[3,0],[3,1],[3,2],[0,3],[1,3],[2,3],[3,3]]);
+  draw('packB','B',null);
+})();
+</script>
+</body>
+</html>
