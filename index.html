@@ -352,6 +352,11 @@ function buildMapCanvas(){
 }
 
 /* ---- placement rules (mirrors the in-game rules used by community map data) ---- */
+/* Structures come from the game-coordinate frame, but terrain+nodes (and this tool's
+   render + coordinate labels) use the flipped frame internal_y = 1199 - gameY.
+   Flip the structure footprints once so every map layer shares one frame. */
+for (const p of PERM_STRUCT) p[1] = 1200 - p[1] - p[2];
+for (const c of CASTLE_STRUCT) c[3] = 1200 - c[3] - c[4];
 const PERM_RECTS = PERM_STRUCT.map(p=>({x1:p[0],y1:p[1],x2:p[0]+p[2],y2:p[1]+p[2]}));
 const FZONES = PERM_STRUCT.map(p=>{
   const fx = Math.round(p[0]+p[2]/2-p[3]/2), fy = Math.round(p[1]+p[2]/2-p[3]/2);
