@@ -80,6 +80,20 @@
   #guide p, #guide li{font-size:12px; color:#c6d0dc; line-height:1.55; margin-bottom:5px;}
   #guide ul{padding-left:16px; margin-bottom:6px;}
   #guide b{color:var(--text);}
+  #livePop{position:absolute; z-index:40; background:var(--panel); border:1px solid var(--accent); border-radius:10px;
+    padding:10px 12px; width:230px; box-shadow:0 8px 24px rgba(0,0,0,.5); pointer-events:none; display:none; font-size:12px;}
+  #livePop .lpTop{display:flex; gap:9px; align-items:center; margin-bottom:7px;}
+  #livePop img{width:40px; height:40px; border-radius:8px; border:1px solid var(--line); flex:none; background:var(--bg);}
+  #livePop .lpName{font-weight:700; font-size:13.5px; line-height:1.15;}
+  #livePop .lpAl{color:var(--dim); font-size:11px;}
+  #livePop .lpRow{display:flex; justify-content:space-between; padding:2px 0; border-top:1px solid var(--line);}
+  #livePop .lpRow span:first-child{color:var(--dim);}
+  #liveImport textarea{width:100%; height:52px; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:5px; font-size:11px; font-family:ui-monospace,monospace; resize:vertical;}
+  #liveImport input[type=text]{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:5px 7px; font-size:12px;}
+  #liveImport select{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:5px 7px; font-size:12px; margin-top:6px;}
   #menuBtn{display:none; position:absolute; left:10px; top:10px; z-index:30; font-size:17px; padding:6px 11px;}
   @media (max-width:760px){
     #menuBtn{display:block;}
@@ -184,6 +198,31 @@
       </div>
 
       <div class="sec">
+        <div class="hd">Live kingdom (real players)</div>
+        <div id="liveImport">
+          <div class="row" style="align-items:center;">
+            <input type="text" id="liveKid" inputmode="numeric" placeholder="Kingdom # (e.g. 1628)" style="flex:1;">
+            <button id="liveFetch">Fetch</button>
+          </div>
+          <div id="liveStatus" class="note" style="margin-top:4px;"></div>
+          <div class="note" style="margin-top:6px;">Fetch needs a CORS proxy (set below) &mdash; otherwise open <span id="liveLink" style="color:var(--accent); cursor:pointer; text-decoration:underline;">the data page</span>, copy all the text, and paste it here:</div>
+          <textarea id="livePaste" placeholder="Paste the map JSON here…" style="margin-top:5px;"></textarea>
+          <div class="row" style="margin-top:5px;">
+            <button id="liveLoad" style="flex:1;">Load pasted data</button>
+            <button id="liveFileBtn">Upload .json</button>
+            <input type="file" id="liveFile" accept=".json,application/json" hidden>
+          </div>
+          <select id="liveFilter" style="display:none;"></select>
+          <div class="row" style="margin-top:6px;">
+            <button id="liveToggle" style="flex:1; display:none;">Hide players</button>
+            <button id="liveClear" class="danger" style="display:none;">Clear</button>
+          </div>
+          <input type="text" id="liveProxy" placeholder="Optional CORS proxy URL" style="margin-top:6px;">
+          <div class="note">Data from kingshotstats.com. Players are a read-only reference layer — they don't count toward caps or move your buildings.</div>
+        </div>
+      </div>
+
+      <div class="sec">
         <div class="hd">Legend &mdash; every symbol (click to show/hide)</div>
         <div id="legendBox"><div id="legendBody" style="font-size:11.5px; line-height:1.7;"></div></div>
       </div>
@@ -219,6 +258,8 @@
         <h3>Bear trap layouts</h3>
         <p>The two hive presets place a trap with 50 TCs and full banner territory coverage. Select a trap any time to see <b>march times</b> from its hive's cities (calibrate speed in Map &rarr; Settings). The <b>TC block</b> stamps a columns&times;rows grid of cities.</p>
         <p><b>Auto-config</b> places a complete alliance — HQ, 2 traps, all 100 TCs, and banners — at one of the 4 best spots near the castle. Pick a style and a spot to preview the ghost (green outline = fits), switch freely, then Place. Needs an empty alliance.</p>
+        <h3>Live kingdom (real players)</h3>
+        <p>On the <b>Map</b> tab, import your kingdom's live player data from kingshotstats.com. Enter your kingdom number and click the <b>data page</b> link — it opens the raw data in a new tab; copy all of it and paste it into the box, then <b>Load</b> (or upload a saved .json). Every player's city appears at its real coordinate, colored by alliance, with TC level shown when zoomed in. Click a city for name, TC, power, alliance, and shield status. Use the alliance dropdown to isolate one alliance. Direct <b>Fetch</b> only works if you set a CORS proxy; otherwise use paste. These players are a read-only reference — they don't move your buildings or count toward caps.</p>
         <h3>The map &amp; rules</h3>
         <p>The real-map overlay enforces in-game rules: nothing on structures, terrain, nodes, or the King's zone; no alliance buildings/traps in the Ruins ring; HQs only in Plains/Badlands; banners blocked in structure no-build zones (cities exempt at fortresses/sanctuaries). Blocked placements explain why in a toast.</p>
         <p>Use the <b>Legend</b> (Map tab) to identify every symbol and show/hide layers. A warning appears if a banner claims an outpost whose type &amp; tier your alliance already has — duplicate buffs don't stack.</p>
@@ -236,6 +277,7 @@
     <canvas id="cv"></canvas>
     <button id="menuBtn">&#9776;</button>
     <button id="helpBtn" title="Help & user guide">?</button>
+    <div id="livePop"></div>
     <div id="hud"></div>
     <div id="toast"></div>
   </main>
@@ -296,7 +338,7 @@ const state = {
   active: null,              // active alliance id
 };
 for (const k in TYPE_DEFS) state.types[k] = {size: TYPE_DEFS[k].size, coverage: TYPE_DEFS[k].coverage};
-const VIS_KEYS = ['hq','banner','city','trap','alnode','statues','kc','f','sa','bg','do','ro','ao','go','po','to','fl','mt','lake','bread','wood','stone','iron','fzones'];
+const VIS_KEYS = ['hq','banner','city','trap','alnode','statues','kc','f','sa','bg','do','ro','ao','go','po','to','fl','mt','lake','bread','wood','stone','iron','fzones','live'];
 for (const k of VIS_KEYS) state.vis[k] = true;
 const STATUE_TYPES = ['gguard','pioneer','swok','horn','champ'];
 function visKey(t){ return STATUE_TYPES.includes(t) ? 'statues' : t; }
@@ -587,6 +629,204 @@ function drawRssLegend(g){
   });
 }
 
+/* =============== live kingdom (real players) =============== */
+let livePlayers = [];   // {n,x,y,tc,pw,ab,al,av,sh}  x,y in internal frame
+let liveMeta = null;    // {kid, count}
+let liveFilterAb = '*'; // alliance abbr filter or '*'
+function allianceColor(ab){
+  if (!ab) return '#8b98a8';
+  let h=0; for (let i=0;i<ab.length;i++) h=(h*31+ab.charCodeAt(i))>>>0;
+  return `hsl(${h%360} 62% 58%)`;
+}
+function parseLiveJSON(text){
+  let d; try{ d = JSON.parse(text); }catch(e){ throw new Error('That is not valid JSON.'); }
+  const cities = Array.isArray(d) ? d : (d.cities || d.players || d.data);
+  if (!Array.isArray(cities) || !cities.length) throw new Error('No player list found in that data.');
+  const out = [];
+  for (const c of cities){
+    if (typeof c.x!=='number' || typeof c.y!=='number') continue;
+    out.push({
+      n: String(c.nick_name || c.name || c.nick || '?'),
+      x: c.x, y: (MAP_GRID-1)-c.y,                 // game -> internal (vertical flip, matches structures)
+      gx: c.x, gy: c.y,
+      tc: c.tc ?? c.stove_lv ?? null,
+      pw: c.power ?? null,
+      ab: c.alliance_abbr || '',
+      al: c.alliance_name || '',
+      av: c.avatar_url || '',
+      sk: c.city_skin_icon || '',
+      sh: !!c.shield_active,
+    });
+  }
+  if (!out.length) throw new Error('No players with coordinates in that data.');
+  livePlayers = out;
+  liveMeta = {kid: d.kid ?? '?', count: out.length};
+  state.vis.live = true;
+  liveFilterAb = '*';
+  buildLiveFilter();
+  document.getElementById('liveToggle').style.display='';
+  document.getElementById('liveClear').style.display='';
+  document.getElementById('liveToggle').textContent='Hide players';
+  setLiveStatus(`Loaded ${out.length} players (kingdom ${liveMeta.kid}).`, 'ok');
+  requestDraw(); saveLive();
+}
+function liveVisible(pl){
+  if (liveFilterAb==='*') return true;
+  return (pl.ab||'(none)') === liveFilterAb;
+}
+const SKIN_BASE='https://kingshotstats.com';
+const skinCache=new Map();
+function getSkin(path){
+  if (!path) return null;
+  let e=skinCache.get(path);
+  if (!e){
+    e={img:null, ok:false};
+    skinCache.set(path, e);
+    const im=new Image();              // no crossOrigin: display only (export uses a clean canvas)
+    im.onload=()=>{ e.img=im; e.ok=true; requestDraw(); };
+    im.src = path.startsWith('http') ? path : SKIN_BASE+path;
+  }
+  return e.ok ? e.img : null;
+}
+// world pass: small alliance-colored dot per player (always; exportable; zoomed-out distribution)
+function drawLivePlayers(g, su){
+  if (!state.vis.live || !livePlayers.length) return;
+  const r = Math.max(0.6, 2.2/su);
+  for (const pl of livePlayers){
+    if (!liveVisible(pl)) continue;
+    const cx=pl.x+0.5, cy=pl.y+0.5;
+    g.fillStyle = allianceColor(pl.ab);
+    g.beginPath(); g.moveTo(cx, cy-r); g.lineTo(cx+r, cy); g.lineTo(cx, cy+r); g.lineTo(cx-r, cy); g.closePath();
+    g.fill();
+    if (pl.sh){ g.strokeStyle='rgba(150,215,255,.95)'; g.lineWidth=Math.max(0.5/su,0.05); g.stroke(); }
+  }
+}
+// screen pass: city-skin icons + TC badge (display only, "looks like their map"); skipped in export
+function drawLiveSkins(g, map, su){
+  if (EXPORTING || !state.vis.live || !livePlayers.length || su < 3) return;
+  const vis=[];
+  for (const pl of livePlayers){
+    if (!liveVisible(pl)) continue;
+    const c=map(pl.x+0.5, pl.y+0.5);
+    if (c.x<-60||c.y<-60||c.x>cw+60||c.y>chh+60) continue;
+    vis.push([pl,c]);
+    if (vis.length>500) break;   // perf guard: too dense -> dots only
+  }
+  if (vis.length>500) return;
+  const w = Math.max(20, Math.min(su*4.2, 74));   // icon width in px
+  const h = w*0.6;
+  g.textAlign='center'; g.textBaseline='middle';
+  for (const [pl,c] of vis){
+    const img = getSkin(pl.sk);
+    if (img){
+      try{ g.drawImage(img, c.x-w/2, c.y-h*0.72, w, h); }catch(_){}
+    } else {
+      g.fillStyle=allianceColor(pl.ab);
+      g.beginPath(); g.moveTo(c.x,c.y-w*0.22); g.lineTo(c.x+w*0.22,c.y); g.lineTo(c.x,c.y+w*0.22); g.lineTo(c.x-w*0.22,c.y); g.closePath(); g.fill();
+    }
+    // alliance-colored TC badge under the city
+    if (pl.tc!=null && su>=4){
+      const by=c.y+h*0.12, bw=Math.max(15, w*0.34);
+      g.fillStyle=allianceColor(pl.ab);
+      g.beginPath();
+      const bx=c.x-bw/2, bh=13, rr=4;
+      g.roundRect ? g.roundRect(bx,by,bw,bh,rr) : g.rect(bx,by,bw,bh);
+      g.fill();
+      g.strokeStyle='rgba(0,0,0,.55)'; g.lineWidth=1; g.stroke();
+      g.font='bold 10px system-ui'; g.fillStyle='#fff';
+      g.fillText(pl.tc, c.x, by+bh/2+.5);
+    }
+    if (pl.sh){   // shield ring
+      g.beginPath(); g.arc(c.x, c.y-h*0.15, w*0.42, 0, Math.PI*2);
+      g.strokeStyle='rgba(150,215,255,.9)'; g.lineWidth=2; g.stroke();
+    }
+  }
+  // names when zoomed in close
+  if (su>=9){
+    g.font='bold 11px system-ui'; g.textBaseline='top';
+    for (const [pl,c] of vis){
+      g.fillStyle='rgba(0,0,0,.65)'; g.fillText(pl.n, c.x+1, c.y+h*0.35+1);
+      g.fillStyle='#eaf1fb'; g.fillText(pl.n, c.x, c.y+h*0.35);
+    }
+  }
+}
+function livePlayerAt(wx,wy){
+  if (!state.vis.live) return null;
+  let best=null, bd=1.6;
+  for (const pl of livePlayers){
+    if (!liveVisible(pl)) continue;
+    const d=Math.hypot(wx-(pl.x+0.5), wy-(pl.y+0.5));
+    if (d<bd){ bd=d; best=pl; }
+  }
+  return best;
+}
+function fmtPower(p){
+  if (p==null) return '—';
+  if (p>=1e9) return (p/1e9).toFixed(2)+'B';
+  if (p>=1e6) return (p/1e6).toFixed(1)+'M';
+  if (p>=1e3) return (p/1e3).toFixed(0)+'K';
+  return String(p);
+}
+function showLivePop(pl, sx, sy){
+  const el=document.getElementById('livePop');
+  el.innerHTML = `<div class="lpTop">${pl.av?`<img src="${pl.av}" onerror="this.style.display='none'">`:''}
+    <div><div class="lpName">${escapeHtml(pl.n)}</div><div class="lpAl">${pl.ab?('['+escapeHtml(pl.ab)+'] '+escapeHtml(pl.al)):'No alliance'}</div></div></div>
+    <div class="lpRow"><span>TC level</span><span>${pl.tc??'—'}</span></div>
+    <div class="lpRow"><span>Power</span><span>${fmtPower(pl.pw)}</span></div>
+    <div class="lpRow"><span>Coords</span><span>X:${pl.gx} Y:${pl.gy}</span></div>
+    <div class="lpRow"><span>Shield</span><span>${pl.sh?'Active':'None'}</span></div>`;
+  const stage=document.getElementById('stage').getBoundingClientRect();
+  let px=sx+14, py=sy+14;
+  if (px+240>stage.width) px=sx-244;
+  if (py+150>stage.height) py=sy-150;
+  el.style.left=Math.max(4,px)+'px'; el.style.top=Math.max(4,py)+'px'; el.style.display='block';
+}
+function hideLivePop(){ document.getElementById('livePop').style.display='none'; }
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function setLiveStatus(msg, cls){ const e=document.getElementById('liveStatus'); if(e){ e.textContent=msg; e.style.color= cls==='ok'?'#6fd67f':cls==='err'?'#ff8080':'var(--dim)'; } }
+function buildLiveFilter(){
+  const sel=document.getElementById('liveFilter'); if(!sel) return;
+  const counts={};
+  for (const pl of livePlayers){ const k=pl.ab||'(none)'; counts[k]=(counts[k]||0)+1; }
+  const abbrs=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  sel.innerHTML = `<option value="*">All alliances (${livePlayers.length})</option>` +
+    abbrs.map(a=>`<option value="${a}">${a} (${counts[a]})</option>`).join('');
+  sel.style.display='';
+  sel.value = liveFilterAb;
+}
+function saveLive(){
+  try{
+    if (livePlayers.length) localStorage.setItem('ksLivePlayers', JSON.stringify({meta:liveMeta, players:livePlayers, filter:liveFilterAb, vis:state.vis.live}));
+    else localStorage.removeItem('ksLivePlayers');
+  }catch(_){}
+}
+function loadLive(){
+  try{
+    const s=localStorage.getItem('ksLivePlayers'); if(!s) return;
+    const d=JSON.parse(s);
+    livePlayers=d.players||[]; liveMeta=d.meta||null; liveFilterAb=d.filter||'*'; state.vis.live=d.vis!==false;
+    if (livePlayers.length){
+      buildLiveFilter();
+      document.getElementById('liveToggle').style.display='';
+      document.getElementById('liveClear').style.display='';
+      setLiveStatus(`${livePlayers.length} players loaded (kingdom ${liveMeta?liveMeta.kid:'?'}).`, 'ok');
+    }
+  }catch(_){}
+}
+async function fetchLive(kid){
+  const proxy=(document.getElementById('liveProxy').value||'').trim();
+  const api=`https://kingshotstats.com/api/map?kid=${encodeURIComponent(kid)}`;
+  const url = proxy ? (proxy + encodeURIComponent(api)) : api;
+  setLiveStatus('Fetching kingdom '+kid+'…','');
+  try{
+    const res=await fetch(url, {headers:{'Accept':'application/json'}});
+    const txt=await res.text();
+    parseLiveJSON(txt);
+  }catch(e){
+    setLiveStatus('Direct fetch blocked (CORS). Open the data page, copy the text, and paste it below.','err');
+  }
+}
+
 /* =============== history =============== */
 const undoStack = [], redoStack = [];
 function snapshot(){ return JSON.stringify({alliances:state.alliances, objects:state.objects, active:state.active}); }
@@ -773,6 +1013,7 @@ function draw(){
   ctx.strokeRect(0,0,state.grid,state.grid);
 
   drawMapStructures(ctx, s);
+  drawLivePlayers(ctx, s);
 
   // object shapes (+ live drop-validity tint while dragging a selection)
   const dragging = (drag && drag.mode==='move' && drag.moved) || !!carry;
@@ -860,6 +1101,7 @@ function draw(){
   }
 
   drawStructLabels(ctx, worldToScreen, s);
+  drawLiveSkins(ctx, worldToScreen, s);
 
   // march time labels (screen space, upright)
   if (mTrap) drawMarchLabels(ctx, mTrap, worldToScreen);
@@ -1138,6 +1380,7 @@ function footprintClear(x, y, sz, ignore){
 
 cv.addEventListener('pointerdown', e=>{
   cv.setPointerCapture(e.pointerId);
+  hideLivePop();
   pointers.set(e.pointerId, {x:e.offsetX, y:e.offsetY});
   if (pointers.size===2){
     const [p1,p2] = [...pointers.values()];
@@ -1183,6 +1426,8 @@ cv.addEventListener('pointerdown', e=>{
     eraseAt(w);
     return;
   }
+  const lp = !hitTest(w.x,w.y) ? livePlayerAt(w.x,w.y) : null;
+  if (lp){ showLivePop(lp, e.offsetX, e.offsetY); drag={mode:'pan', w}; return; }
   const o = hitTest(w.x,w.y);
   if (o){
     const members = groupOf(o);
@@ -1472,6 +1717,7 @@ function renderLegend(){
   rows.push(row('stone',sw('#B0BEC5')+'Stone nodes'));
   rows.push(row('iron', sw('#42A5F5')+'Iron nodes'));
   rows.push(hdr('Overlays','ovl'));
+  rows.push(row('live', '<span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid #4da3ff;margin-right:4px;"></span>Live players (real kingdom)'));
   rows.push(row('fzones','<span style="color:#ff8a8a;">&#9640; dashed red</span> — structure no-build zones'));
   rows.push('<span style="color:var(--dim);">shaded rings — resource-level zones (Resource levels button).</span>');
   rows.push('<span style="color:var(--dim);">Node &amp; terrain positions calibrated against in-game landmarks (community data, spot-verified). If something looks off on your server, tell us the in-game X:Y.</span>');
@@ -1977,6 +2223,43 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
+/* =============== live import handlers =============== */
+document.getElementById('liveLink').onclick = ()=>{
+  const kid=(document.getElementById('liveKid').value||'').trim()||'1628';
+  window.open('https://kingshotstats.com/api/map?kid='+encodeURIComponent(kid),'_blank');
+};
+document.getElementById('liveFetch').onclick = ()=>{
+  const kid=(document.getElementById('liveKid').value||'').trim();
+  if(!/^\d+$/.test(kid)){ setLiveStatus('Enter a kingdom number first.','err'); return; }
+  fetchLive(kid);
+};
+document.getElementById('liveLoad').onclick = ()=>{
+  const t=document.getElementById('livePaste').value.trim();
+  if(!t){ setLiveStatus('Paste the JSON data first.','err'); return; }
+  try{ parseLiveJSON(t); document.getElementById('livePaste').value=''; }
+  catch(e){ setLiveStatus(e.message,'err'); }
+};
+document.getElementById('liveFileBtn').onclick = ()=>document.getElementById('liveFile').click();
+document.getElementById('liveFile').onchange = function(){
+  const f=this.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ try{ parseLiveJSON(r.result); }catch(e){ setLiveStatus(e.message,'err'); } };
+  r.readAsText(f); this.value='';
+};
+document.getElementById('liveFilter').onchange = function(){ liveFilterAb=this.value; requestDraw(); saveLive(); };
+document.getElementById('liveToggle').onclick = function(){
+  state.vis.live=!state.vis.live; this.textContent=state.vis.live?'Hide players':'Show players';
+  renderLegend(); requestDraw(); saveLive();
+};
+document.getElementById('liveClear').onclick = ()=>{
+  livePlayers=[]; liveMeta=null; hideLivePop();
+  document.getElementById('liveFilter').style.display='none';
+  document.getElementById('liveToggle').style.display='none';
+  document.getElementById('liveClear').style.display='none';
+  setLiveStatus('Cleared.','');
+  requestDraw(); saveLive();
+};
+document.getElementById('liveProxy').onchange = function(){ try{ localStorage.setItem('ksLiveProxy', this.value.trim()); }catch(_){} };
+
 /* =============== sidebar tabs & help =============== */
 function showTab(name){
   for (const t of ['Build','Map','Help']){
@@ -2010,6 +2293,8 @@ document.getElementById('helpBtn').onclick = ()=>{
   updateMapBtns();
   renderLegend();
   renderAutoSpots();
+  try{ const pr=localStorage.getItem('ksLiveProxy'); if(pr) document.getElementById('liveProxy').value=pr; }catch(_){}
+  loadLive();
   if (state.realMap) state.grid = MAP_GRID;
   decodeTerrain();
   resize();
