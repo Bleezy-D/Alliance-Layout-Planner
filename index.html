@@ -138,9 +138,9 @@
 
     <div class="sec">
       <div class="hd">Quick layouts — bear trap hive</div>
-      <button id="qsB" style="width:100%; text-align:left; margin-bottom:5px;">&#128059; Swirl hive (B) &mdash; 55 TCs &middot; 8 banners</button>
-      <button id="qsA" style="width:100%; text-align:left;">&#128059; Banner-pad hive (A) &mdash; 56 TCs &middot; 8 banners</button>
-      <div class="note">The two placements from the strategy guide &sect;2, with the exact minimum banners (integer-programming set cover) to cover every TC &mdash; banners sit on packing gaps and the outer ring wherever possible, only taking a city slot when a TC can't be reached any other way. Placed as a grouped unit; drag to move, Ungroup to customize.</div>
+      <button id="qsB" style="width:100%; text-align:left; margin-bottom:5px;">&#128059; Swirl hive (B) &mdash; 50 TCs &middot; 7 banners</button>
+      <button id="qsA" style="width:100%; text-align:left;">&#128059; Banner-pad hive (A) &mdash; 50 TCs &middot; 10 banners</button>
+      <div class="note">Your imported bear configurations &mdash; swirl (50 TCs) and banner-pad (50 TCs) &mdash; with your banners kept and extra banners added so every TC sits in territory. Placed as a grouped unit; drag to move, Ungroup to customize.</div>
       <div class="row" style="margin-top:8px; align-items:center;">
         <input type="number" id="tcCols" min="1" max="20" value="5" title="Columns" style="width:46px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 5px; font-size:12px;">
         <span style="color:var(--dim);">&times;</span>
@@ -230,12 +230,12 @@ const AL_COLORS = ['#4da3ff','#ff6b6b','#ffd166','#06d6a0','#c77dff','#f58f5b','
    B: flush swirl - 8 cities tight against the trap; 8 banners minimum (one MUST sit in a
       flush slot: only flush cells can cover the trap's own 3x3), 52 cities. */
 const TEMPLATES = {
-  B: {trap:[0,0], banners:[[-7,-3],[-7,4],[0,-8],[0,-1],[0,6],[4,11],[7,-3],[7,4]],
-    cities:[[1,-2],[3,-1],[3,1],[2,3],[0,3],[-2,2],[-2,0],[-3,-2],[3,-3],[4,3],[-2,4],[-4,0],[0,-4],[5,0],[1,5],[-4,2],[-2,-4],[5,-2],[3,5],[2,-5],[6,2],[-4,4],[-5,-2],[-4,-4],[5,-4],[5,5],[-6,0],[0,-6],[7,0],[1,7],[-3,6],[-6,2],[-2,-6],[7,-2],[3,7],[4,-6],[-6,4],[2,-7],[8,2],[-1,8],[-5,6],[-7,-2],[-6,-4],[-4,-6],[5,7],[-3,8],[-8,0],[6,-6],[9,0],[7,6],[1,9],[-8,2],[-2,-8],[9,-2],[3,9]]},
-  A: {trap:[0,0], banners:[[-8,-3],[-8,4],[-3,-8],[-1,-1],[-1,6],[4,-8],[6,-1],[6,6]],
-    cities:[[-2,0],[0,-2],[2,-2],[-2,2],[4,0],[0,4],[4,2],[2,4],[4,-2],[-2,4],[-4,0],[0,-4],[2,-4],[-4,2],[4,4],[-4,-2],[-2,-4],[6,0],[0,6],[4,-4],[6,2],[2,6],[-4,4],[-4,-4],[-6,0],[0,-6],[6,4],[4,6],[2,-6],[-6,2],[-6,-2],[-2,-6],[6,-4],[-4,6],[4,-6],[-6,4],[8,0],[0,8],[8,2],[2,8],[-6,-4],[-4,-6],[8,-2],[-2,8],[8,4],[4,8],[-8,0],[0,-8],[6,-6],[-6,6],[2,-8],[-8,2],[8,-4],[-4,8],[-8,-2],[-2,-8]]}
+  B: {trap:[7,9], banners:[[13,11],[10,6],[16,4],[10,15],[3,14],[4,7],[6,0]],
+    cities:[[1,6],[5,6],[1,8],[3,8],[5,8],[1,10],[3,10],[5,10],[2,12],[4,12],[7,7],[10,11],[11,7],[10,9],[8,16],[10,13],[6,12],[5,4],[7,5],[9,7],[11,5],[13,5],[13,7],[10,16],[12,9],[12,12],[12,14],[8,12],[0,12],[6,14],[4,14],[3,4],[3,2],[5,2],[7,3],[9,4],[11,3],[13,3],[1,4],[15,7],[14,9],[14,11],[14,13],[8,14],[6,16],[4,16],[2,16],[0,14],[7,1],[12,16]]},
+  A: {trap:[8,9], banners:[[8,8],[7,11],[7,18],[7,1],[0,1],[1,8],[0,15],[12,0],[13,7],[13,14]],
+    cities:[[13,4],[11,6],[15,6],[11,8],[13,8],[15,8],[11,10],[13,10],[15,10],[11,12],[13,12],[15,12],[11,14],[15,14],[9,6],[7,6],[5,6],[5,8],[5,10],[5,12],[7,12],[9,12],[9,14],[7,14],[5,14],[3,14],[3,12],[3,10],[3,8],[3,6],[3,4],[5,4],[7,4],[9,4],[11,4],[13,2],[11,2],[9,2],[7,2],[5,2],[1,12],[15,4],[7,16],[9,16],[11,16],[13,16],[5,16],[1,10],[1,6],[3,16]]}
 };
-const AUTOCFG = {"B":{"hq":[20,9],"traps":[[8,9],[32,9]],"cities":[[11,10],[8,12],[6,9],[33,7],[35,10],[32,12],[30,9],[7,7],[11,8],[10,12],[6,11],[35,8],[34,12],[30,11],[5,7],[11,6],[12,12],[6,13],[29,7],[35,6],[36,12],[30,13],[4,9],[8,5],[13,9],[28,9],[32,5],[37,9],[33,14],[4,11],[28,11],[6,5],[13,7],[11,14],[30,5],[37,7],[35,14],[10,4],[14,11],[7,15],[4,13],[34,4],[38,11],[28,13],[3,7],[27,7],[4,5],[13,5],[13,14],[28,5],[37,5],[37,14],[2,9],[8,3],[15,9],[9,16],[5,15],[26,9],[32,3],[39,9],[33,16],[29,15],[2,11],[26,11],[6,3],[15,7],[11,16],[30,3],[39,7],[35,16],[12,3],[15,13],[36,3],[26,13],[10,2],[16,11],[7,17],[34,2],[40,11],[31,17],[3,15],[27,15],[1,7],[4,3],[15,5],[13,16],[25,7],[26,5],[28,3],[37,16],[5,17],[29,17],[0,9],[8,1],[14,3],[17,9],[15,15],[9,18],[24,9],[38,3]],"banners":[[3,6],[3,13],[7,20],[10,0],[10,7],[10,14],[32,1],[32,8],[32,15],[36,20],[39,6],[39,13]],"w":43,"h":23,"spots":[{"ox":432,"oy":438,"dir":"NW","dist":211},{"ox":750,"oy":726,"dir":"SE","dist":219},{"ox":624,"oy":882,"dir":"S","dist":296},{"ox":690,"oy":276,"dir":"N","dist":333}]},"A":{"hq":[20,8],"traps":[[8,8],[32,8]],"cities":[[6,8],[8,6],[30,8],[6,10],[34,6],[30,10],[6,6],[12,8],[8,12],[30,6],[36,8],[32,12],[12,10],[10,12],[36,10],[34,12],[12,6],[6,12],[36,6],[30,12],[4,8],[8,4],[28,8],[32,4],[10,4],[4,10],[34,4],[28,10],[12,12],[36,12],[4,6],[6,4],[28,6],[30,4],[14,8],[8,14],[38,8],[12,4],[14,10],[4,12],[36,4],[38,10],[34,14],[28,12],[14,6],[6,14],[30,14],[4,4],[28,4],[2,8],[8,2],[14,12],[12,14],[26,8],[32,2],[38,12],[36,14],[10,2],[34,2],[26,10],[2,6],[6,2],[26,6],[30,2],[14,4],[4,14],[38,4],[28,14],[12,2],[2,12],[36,2],[26,12],[16,8],[8,16],[40,8],[32,16],[16,10],[10,16],[40,10],[34,16],[14,14],[2,4],[4,2],[16,6],[6,16],[26,4],[28,2],[40,6],[30,16],[16,12],[12,16],[40,12],[36,16],[0,8],[8,0],[14,2],[2,14],[24,8],[32,0],[38,2]],"banners":[[3,3],[3,10],[3,17],[10,0],[10,7],[10,14],[31,0],[32,7],[32,14],[38,0],[39,7],[39,14]],"w":43,"h":20,"spots":[{"ox":492,"oy":396,"dir":"NW","dist":213},{"ox":756,"oy":726,"dir":"SE","dist":223},{"ox":528,"oy":900,"dir":"S","dist":314},{"ox":624,"oy":276,"dir":"N","dist":318}]}};
+const AUTOCFG = {"A":{"hq":[18,8],"traps":[[8,8],[28,9]],"cities":[[13,3],[11,5],[13,5],[15,5],[11,7],[13,7],[15,7],[11,9],[13,9],[15,9],[11,11],[13,11],[15,11],[13,13],[15,13],[9,5],[7,5],[5,5],[5,7],[5,9],[5,11],[7,11],[9,11],[9,13],[7,13],[5,13],[3,13],[3,11],[3,9],[3,7],[3,5],[3,3],[5,3],[7,3],[9,3],[11,3],[13,1],[11,1],[9,1],[7,1],[5,1],[1,11],[15,3],[7,15],[9,15],[11,15],[13,15],[5,15],[1,9],[24,4],[26,6],[24,6],[22,6],[26,8],[24,8],[22,8],[26,10],[24,10],[22,10],[26,12],[24,12],[22,12],[24,14],[22,14],[28,6],[30,6],[32,6],[32,8],[32,10],[32,12],[30,12],[28,12],[28,14],[30,14],[32,14],[34,14],[34,12],[34,10],[34,8],[34,6],[34,4],[32,4],[30,4],[28,4],[26,4],[24,2],[26,2],[28,2],[30,2],[32,2],[36,12],[22,4],[30,16],[28,16],[26,16],[24,16],[32,16],[36,10],[18,6],[18,11]],"banners":[[8,7],[7,10],[7,17],[7,0],[0,0],[1,7],[0,14],[30,8],[31,11],[31,18],[31,1],[38,1],[37,8],[38,15],[11,0],[11,14],[25,1],[26,14]],"w":41,"h":21,"spots":[{"ox":492,"oy":402,"dir":"NW","dist":208},{"ox":762,"oy":726,"dir":"SE","dist":226},{"ox":684,"oy":276,"dir":"N","dist":331},{"ox":258,"oy":462,"dir":"W","dist":347}]},"B":{"hq":[17,7],"traps":[[7,7],[27,8]],"cities":[[1,4],[3,4],[5,4],[1,6],[3,6],[5,6],[1,8],[5,8],[2,10],[4,10],[7,5],[10,9],[11,5],[10,7],[8,14],[10,11],[6,10],[5,2],[7,3],[9,5],[11,3],[13,3],[13,5],[10,14],[12,7],[12,10],[12,12],[8,10],[0,10],[6,12],[4,12],[3,0],[5,0],[7,1],[9,2],[11,1],[13,1],[1,2],[15,5],[14,7],[14,9],[14,11],[8,12],[6,14],[4,14],[2,14],[2,12],[0,12],[34,5],[32,5],[30,5],[34,7],[32,7],[30,7],[34,9],[30,9],[33,11],[31,11],[28,6],[25,10],[24,6],[25,8],[27,15],[25,12],[29,11],[30,3],[28,4],[26,6],[24,4],[22,4],[22,6],[25,15],[23,8],[23,11],[23,13],[27,11],[35,11],[29,13],[31,13],[32,1],[30,1],[28,2],[26,3],[24,2],[22,2],[34,3],[20,6],[21,8],[21,10],[21,12],[27,13],[29,15],[31,15],[33,15],[33,13],[35,13],[17,10],[19,10],[17,5],[19,4]],"banners":[[13,9],[10,4],[16,2],[10,13],[23,10],[26,5],[20,3],[26,14],[3,2],[3,9],[3,16],[32,3],[33,10],[33,17]],"w":38,"h":20,"spots":[{"ox":492,"oy":402,"dir":"NW","dist":209},{"ox":750,"oy":732,"dir":"SE","dist":220},{"ox":684,"oy":276,"dir":"N","dist":331},{"ox":264,"oy":462,"dir":"W","dist":343}]}};
 
 let uid = 1;
 const state = {
@@ -395,6 +395,7 @@ function mapBlockReason(t,x,y,sz){
 
 /* ---- clicked-coordinate readout ---- */
 let picked = null;   // {x, y, text}
+let autoSpot = null; // selected auto-config spot index (preview before placing)
 
 /* ---- outpost buff claims (banner coverage touching an outpost footprint) ---- */
 const OUTPOST_CATS = new Set(['Construction Outpost','Defense Outpost','Research Outpost',
@@ -788,6 +789,26 @@ function draw(){
   }
   if (tool==='place' && ghost)
     drawLabel(ctx, {t:placeType, x:ghost.x, y:ghost.y, a:state.active, n:''}, worldToScreen, s, .7);
+
+  // auto-config spot preview (ghost cluster with validity tint)
+  const prev = autoPreviewObjs();
+  if (prev){
+    worldTransform(ctx);
+    ctx.globalAlpha = .5;
+    for (const o of prev){
+      ctx.fillStyle = o.bad ? 'rgba(255,70,70,.85)' : (o.t==='hq'?'#c9a84c':o.t==='trap'?'#c0392b':o.t==='banner'?'#8fb8ff':'#4da3ff');
+      ctx.fillRect(o.x, o.y, o.sz, o.sz);
+    }
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 2/s;
+    const anyBad = prev.some(o=>o.bad);
+    ctx.strokeStyle = anyBad ? 'rgba(255,90,90,.9)' : 'rgba(80,220,120,.9)';
+    const xs=prev.map(o=>o.x), ys=prev.map(o=>o.y), xe=prev.map(o=>o.x+o.sz), ye=prev.map(o=>o.y+o.sz);
+    ctx.setLineDash([5/s,3/s]);
+    ctx.strokeRect(Math.min(...xs)-1, Math.min(...ys)-1, Math.max(...xe)-Math.min(...xs)+2, Math.max(...ye)-Math.min(...ys)+2);
+    ctx.setLineDash([]);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
 
   drawStructLabels(ctx, worldToScreen, s);
 
@@ -1335,8 +1356,12 @@ document.getElementById('btnRss').onclick = ()=>{
 };
 document.getElementById('qsA').onclick = ()=>placeTemplate('A');
 document.getElementById('qsTC').onclick = placeTCBlock;
-document.getElementById('autoSwirl').onclick = ()=>{ state.autoLayout='B'; renderAutoSpots(); autosave(); };
-document.getElementById('autoPad').onclick   = ()=>{ state.autoLayout='A'; renderAutoSpots(); autosave(); };
+document.getElementById('autoSwirl').onclick = ()=>{ state.autoLayout='B'; if(autoSpot!==null) selectAutoSpotReframe(); renderAutoSpots(); requestDraw(); autosave(); };
+document.getElementById('autoPad').onclick   = ()=>{ state.autoLayout='A'; if(autoSpot!==null) selectAutoSpotReframe(); renderAutoSpots(); requestDraw(); autosave(); };
+function selectAutoSpotReframe(){
+  const A=AUTOCFG[state.autoLayout], sp=A.spots[autoSpot];
+  if (sp) centerOn(sp.ox+A.w/2, sp.oy+A.h/2, Math.max(1.5, Math.min(cw,chh)/(A.w+40)));
+}
 
 function placeAutoConfig(spotIdx){
   if (!state.active){ toast('Add an alliance first'); return; }
@@ -1367,10 +1392,33 @@ function placeAutoConfig(spotIdx){
   A.banners.forEach(b=>add('banner',b));
   setTool('select'); setSelection(made);
   state.grid = MAP_GRID;
+  autoSpot = null; renderAutoSpots();
   terrDirty=true; renderAlliances(); requestDraw(); autosave();
   // frame it
   centerOn(sp.ox+A.w/2, sp.oy+A.h/2, Math.max(2, Math.min(cw,chh)/(A.w+30)));
   toast('Auto-config placed — full alliance ('+A.cities.length+' TCs, '+A.banners.length+' banners) — drag or Ungroup to adjust');
+}
+
+// preview a spot on the map (select, don't place); returns how many pieces are blocked
+function selectAutoSpot(idx){
+  if (autoSpot === idx){ autoSpot = null; renderAutoSpots(); requestDraw(); return; }  // click again = deselect
+  autoSpot = idx;
+  if (!state.realMap){ state.realMap = true; state.grid = MAP_GRID; renderSettings(); updateMapBtns(); terrDirty = true; }
+  const A = AUTOCFG[state.autoLayout], sp = A.spots[idx];
+  centerOn(sp.ox+A.w/2, sp.oy+A.h/2, Math.max(1.5, Math.min(cw,chh)/(A.w+40)));
+  renderAutoSpots(); requestDraw();
+}
+function autoPreviewObjs(){
+  if (autoSpot===null) return null;
+  const A = AUTOCFG[state.autoLayout], sp = A.spots[autoSpot];
+  if (!sp) return null;
+  const objs = [['hq',A.hq]].concat(A.traps.map(t=>['trap',t]))
+    .concat(A.cities.map(c=>['city',c])).concat(A.banners.map(b=>['banner',b]));
+  return objs.map(([t,p])=>{
+    const x=sp.ox+p[0], y=sp.oy+p[1], sz=tSize(t);
+    const bad = !!mapBlockReason(t,x,y,sz) || !footprintClear(x,y,sz,null);
+    return {t,x,y,sz,bad};
+  });
 }
 function renderAutoSpots(){
   const wrap = document.getElementById('autoSpots');
@@ -1380,10 +1428,19 @@ function renderAutoSpots(){
   A.spots.forEach((sp,i)=>{
     const b = document.createElement('button');
     b.style.cssText = 'width:100%; text-align:left; margin-bottom:5px;';
+    b.className = (autoSpot===i) ? 'on' : '';
     b.innerHTML = `&#127919; Spot ${i+1} — <b>${sp.dir}</b> of castle · ${sp.dist} tiles out`;
-    b.onclick = ()=>placeAutoConfig(i);
+    b.onclick = ()=>selectAutoSpot(i);
     wrap.appendChild(b);
   });
+  const place = document.createElement('button');
+  place.id = 'autoPlace';
+  place.style.cssText = 'width:100%; margin-top:2px;';
+  place.className = 'on';
+  place.disabled = (autoSpot===null);
+  place.textContent = autoSpot===null ? 'Select a spot to place' : ('Place here — Spot '+(autoSpot+1));
+  place.onclick = ()=>{ if (autoSpot!==null) placeAutoConfig(autoSpot); };
+  wrap.appendChild(place);
   document.getElementById('autoSwirl').classList.toggle('on', state.autoLayout==='B');
   document.getElementById('autoPad').classList.toggle('on', state.autoLayout==='A');
 }
