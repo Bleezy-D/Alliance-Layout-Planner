@@ -68,6 +68,18 @@
     border-radius:8px; padding:7px 16px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none;}
   #toast.show{opacity:1;}
 
+  /* sidebar tabs */
+  #tabBar{display:flex; gap:4px; position:sticky; top:0; background:var(--panel); padding:4px 0 10px; z-index:5;}
+  #tabBar button{flex:1; padding:7px 0; font-size:13px; border-radius:8px;}
+  #tabBar button.on{background:#20456e; border-color:var(--accent); color:#fff; font-weight:600;}
+  .tabPane{display:none;}
+  .tabPane.on{display:block;}
+  #helpBtn{position:absolute; right:10px; top:10px; z-index:30; font-size:15px; width:34px; height:34px;
+    border-radius:50%; font-weight:700;}
+  #guide h3{font-size:12.5px; color:var(--accent); margin:14px 0 4px; text-transform:uppercase; letter-spacing:.5px;}
+  #guide p, #guide li{font-size:12px; color:#c6d0dc; line-height:1.55; margin-bottom:5px;}
+  #guide ul{padding-left:16px; margin-bottom:6px;}
+  #guide b{color:var(--text);}
   #menuBtn{display:none; position:absolute; left:10px; top:10px; z-index:30; font-size:17px; padding:6px 11px;}
   @media (max-width:760px){
     #menuBtn{display:block;}
@@ -80,119 +92,150 @@
 <div id="app">
   <aside id="sidebar">
     <h1>Alliance Layout Planner</h1>
-    <div class="tag">Multi-alliance territory planning</div>
+    <div class="tag">Multi-alliance territory planning for Kingshot</div>
 
-    <div class="sec">
-      <div class="hd">Tools</div>
-      <div class="row">
-        <button id="toolSelect" title="Select / move (V)">&#10022; Select</button>
-        <button id="toolPan" title="Pan (H) — or middle-mouse drag">&#9995; Pan</button>
-        <button id="toolErase" title="Erase (E)">&#10006; Erase</button>
+    <div id="tabBar">
+      <button id="tabBtnBuild" class="on">&#128296; Build</button>
+      <button id="tabBtnMap">&#128506; Map</button>
+      <button id="tabBtnHelp">&#10067; Help</button>
+    </div>
+
+    <!-- ================= BUILD ================= -->
+    <div id="tabBuild" class="tabPane on">
+      <div class="sec">
+        <div class="hd">Tools</div>
+        <div class="row">
+          <button id="toolSelect" title="Select / move (V)">&#10022; Select</button>
+          <button id="toolPan" title="Pan (H) — or middle-mouse drag">&#9995; Pan</button>
+          <button id="toolErase" title="Erase (E) — erasing a grouped building removes the whole group">&#10006; Erase</button>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button id="btnUndo" title="Undo (Ctrl+Z)">&#8630;</button>
+          <button id="btnRedo" title="Redo (Ctrl+Y)">&#8631;</button>
+          <button id="btnCenter" title="Center the view on your layout">&#8982; Fit</button>
+          <button id="btnGroup" title="Group the selected buildings so they move together" disabled>&#10697; Group</button>
+          <button id="btnUngroup" title="Break the selected group apart" disabled>Ungroup</button>
+          <button id="btnRotCCW" title="Rotate selection 90° counter-clockwise (Shift+R)" disabled>&#8634;</button>
+          <button id="btnRotCW" title="Rotate selection 90° clockwise (R)" disabled>&#8635;</button>
+        </div>
       </div>
-      <div class="row" style="margin-top:6px;">
-        <button id="btnUndo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
-        <button id="btnRedo" title="Redo (Ctrl+Y)">&#8631; Redo</button>
-        <button id="btnCenter" title="Center view on your layout">&#8982; Fit</button>
+
+      <div class="sec">
+        <div class="hd">Alliances</div>
+        <div id="allianceList"></div>
+        <button id="btnAddAlliance" style="width:100%;">+ Add alliance</button>
+        <div class="note">Click a row to set the active alliance — new buildings belong to it. &#128065; hides an alliance.</div>
       </div>
-      <div class="row" style="margin-top:6px;">
-        <button id="btnGroup" title="Group the selected buildings so they move together (shift-click to multi-select)" disabled>&#10697; Group</button>
-        <button id="btnUngroup" title="Break the selected group apart for individual editing" disabled>Ungroup</button>
+
+      <div class="sec palette">
+        <div class="hd">Alliance buildings</div>
+        <div id="palAlliance"></div>
+      </div>
+
+      <div class="sec palette">
+        <div class="hd">Map landmarks (neutral)</div>
+        <div id="palNeutral"></div>
+      </div>
+
+      <div class="sec">
+        <div class="hd">Bear trap presets</div>
+        <button id="qsB" style="width:100%; text-align:left; margin-bottom:5px;">&#128059; Swirl hive (B) &mdash; 50 TCs &middot; 7 banners</button>
+        <button id="qsA" style="width:100%; text-align:left;">&#128059; Banner-pad hive (A) &mdash; 50 TCs &middot; 10 banners</button>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <input type="number" id="tcCols" min="1" max="20" value="5" title="Columns" style="width:46px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 5px; font-size:12px;">
+          <span style="color:var(--dim);">&times;</span>
+          <input type="number" id="tcRows" min="1" max="20" value="4" title="Rows" style="width:46px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 5px; font-size:12px;">
+          <button id="qsTC" style="flex:1;">Place TC block</button>
+        </div>
+        <div class="note">Hives and TC blocks place as a group at the view center &mdash; pick up, rotate, and set down anywhere.</div>
+      </div>
+
+      <div class="sec">
+        <div class="hd">Auto-config &mdash; full alliance</div>
+        <div class="row" style="margin-bottom:6px;">
+          <button id="autoSwirl" style="flex:1;">Swirl</button>
+          <button id="autoPad" style="flex:1;">Banner-pad</button>
+        </div>
+        <div id="autoSpots"></div>
+        <div class="note">1 HQ + 2 traps + 100 TCs + banners at one of the 4 best map spots. Click a spot to preview (green = fits), then Place.</div>
+      </div>
+
+      <div class="sec">
+        <div class="hd">Layout file</div>
+        <div class="row">
+          <button id="btnPng">&#128247; PNG</button>
+          <button id="btnSave">&#128190; Save</button>
+          <button id="btnLoad">&#128194; Load</button>
+          <button id="btnClear" class="danger">Clear all</button>
+        </div>
+        <div class="note">Save/Load shares .json plans with co-leads; work also auto-saves in this browser.</div>
       </div>
     </div>
 
-    <div class="sec">
-      <div class="hd">Alliances</div>
-      <div id="allianceList"></div>
-      <button id="btnAddAlliance" style="width:100%;">+ Add alliance</button>
-      <div class="note">Click a row to make it the active alliance (new buildings go to it). &#128065; toggles visibility.</div>
-    </div>
-
-    <div class="sec palette">
-      <div class="hd">Alliance buildings</div>
-      <div id="palAlliance"></div>
-    </div>
-
-    <div class="sec palette">
-      <div class="hd">Map landmarks (neutral)</div>
-      <div id="palNeutral"></div>
-    </div>
-
-    <div class="sec">
-      <div class="hd">Kingshot map overlay</div>
-      <div class="row">
-        <button id="btnRealMap" title="Show the real Kingshot map: mountains, lakes, King's Castle, fortresses, sanctuaries, outposts — with in-game placement rules enforced">&#128506; Real map</button>
-        <button id="btnRss" title="Shade the map by resource-node level rings">&#9935; Resource levels</button>
+    <!-- ================= MAP ================= -->
+    <div id="tabMap" class="tabPane">
+      <div class="sec">
+        <div class="hd">Map overlay</div>
+        <div class="row">
+          <button id="btnRealMap" title="Real Kingshot map: terrain, nodes, structures and their rules">&#128506; Real map</button>
+          <button id="btnRss" title="Shade the resource-level rings">&#9935; Resource levels</button>
+        </div>
+        <div class="note">Structures, terrain, and nodes are calibrated to in-game coordinates; placement rules are enforced. Coordinates shown match the game.</div>
       </div>
-      <div class="note">Real map data: 67k mountain + 23k lake tiles (unbuildable), all 95 permanent structures and their no-build zones, and zone rules (no alliance builds in Ruins, HQ only in Plains/Badlands). Placement is validated against all of it.</div>
-    </div>
 
-    <div class="sec">
-      <div class="hd">Auto-config — full alliance</div>
-      <div class="row" style="margin-bottom:6px;">
-        <button id="autoSwirl" style="flex:1;">Swirl</button>
-        <button id="autoPad" style="flex:1;">Banner-pad</button>
+      <div class="sec">
+        <div class="hd">Legend &mdash; every symbol (click to show/hide)</div>
+        <div id="legendBox"><div id="legendBody" style="font-size:11.5px; line-height:1.7;"></div></div>
       </div>
-      <div id="autoSpots"></div>
-      <div class="note">Places a complete alliance at one of the 4 best map locations: 1 HQ, 2 bear traps, 100 TCs, and the minimum banners to cover every TC. Spots are ranked by closeness to the King's Castle (HQ must sit in the Plains ring, never Fertile). Use an empty alliance; placed as a group — drag or Ungroup to adjust.</div>
-    </div>
 
-    <div class="sec">
-      <div class="hd">Quick layouts — bear trap hive</div>
-      <button id="qsB" style="width:100%; text-align:left; margin-bottom:5px;">&#128059; Swirl hive (B) &mdash; 50 TCs &middot; 7 banners</button>
-      <button id="qsA" style="width:100%; text-align:left;">&#128059; Banner-pad hive (A) &mdash; 50 TCs &middot; 10 banners</button>
-      <div class="note">Your imported bear configurations &mdash; swirl (50 TCs) and banner-pad (50 TCs) &mdash; with your banners kept and extra banners added so every TC sits in territory. Placed as a grouped unit; drag to move, Ungroup to customize.</div>
-      <div class="row" style="margin-top:8px; align-items:center;">
-        <input type="number" id="tcCols" min="1" max="20" value="5" title="Columns" style="width:46px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 5px; font-size:12px;">
-        <span style="color:var(--dim);">&times;</span>
-        <input type="number" id="tcRows" min="1" max="20" value="4" title="Rows" style="width:46px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 5px; font-size:12px;">
-        <button id="qsTC" style="flex:1;">Place TC block</button>
+      <div class="sec">
+        <details>
+          <summary>Settings &mdash; sizes &amp; coverage</summary>
+          <div class="set"><span>Diamond view (in-game angle)</span><input type="checkbox" id="setRot"></div>
+          <div class="set"><span>Map grid size</span><input type="number" id="setGrid" min="200" max="3000" step="50"></div>
+          <div class="set"><span>Territory opacity</span><input type="range" id="setOpacity" min="5" max="60"></div>
+          <div class="set"><span>March speed (tiles/min)</span><input type="number" id="setMarch" min="1" max="600" step="1" title="Calibrate: time one real march in game, then set tiles-per-minute here"></div>
+          <div id="typeSettings"></div>
+          <div class="note">One grid square = one in-game tile. Footprints/coverage are editable if your server differs.</div>
+        </details>
       </div>
-      <div class="note">Places a grouped columns &times; rows block of member cities in one click.</div>
     </div>
 
-    <div class="sec">
-      <details id="legendBox">
-        <summary>Legend — every symbol on the map</summary>
-        <div id="legendBody" style="font-size:11.5px; line-height:1.7;"></div>
-      </details>
-    </div>
-
-    <div class="sec">
-      <div class="hd">Layout</div>
-      <div class="row">
-        <button id="btnPng">&#128247; Export PNG</button>
-        <button id="btnSave">&#128190; Save</button>
-        <button id="btnLoad">&#128194; Load</button>
-        <button id="btnClear" class="danger">Clear all</button>
+    <!-- ================= HELP ================= -->
+    <div id="tabHelp" class="tabPane">
+      <div id="guide">
+        <h3>Getting started</h3>
+        <p>Add your <b>alliances</b> (Build tab), click one to make it active, then click a building type and click the map to place it. Keep clicking to place more; <span class="kbd">Esc</span> stops. Mouse wheel zooms; pan with the Pan tool (<span class="kbd">H</span>) or middle-drag.</p>
+        <h3>Selecting &amp; moving</h3>
+        <ul>
+          <li><b>Click</b> a building to select it — clicking a grouped building selects its whole group. The pill shows its in-game X:Y.</li>
+          <li><b>Drag a box</b> over buildings to select many. Hold <span class="kbd">Ctrl</span> or <span class="kbd">Shift</span> to add more boxes to the selection.</li>
+          <li><b>Drag</b> a selection to move it — green tint means the spot is clear, red marks obstructed buildings; an invalid drop snaps back.</li>
+          <li><b>Pick up &amp; carry:</b> click an already-selected group to lift it. It follows your cursor; <span class="kbd">R</span>/<span class="kbd">Shift+R</span> rotate it mid-carry; click to set down (only when all green); <span class="kbd">Esc</span> or right-click cancels.</li>
+          <li><b>Rotate:</b> <span class="kbd">R</span> = 90&deg; clockwise, <span class="kbd">Shift+R</span> = counter-clockwise (also the &#8634;/&#8635; buttons).</li>
+          <li><b>Group / Ungroup:</b> selected buildings can be grouped to always move as one. Erasing any grouped building erases the whole group (undo restores it).</li>
+          <li><b>Names:</b> double-click a member city to set the player's name (shown in the square); double-click an HQ to rename its alliance; double-click other buildings to label them.</li>
+        </ul>
+        <h3>Bear trap layouts</h3>
+        <p>The two hive presets place a trap with 50 TCs and full banner territory coverage. Select a trap any time to see <b>march times</b> from its hive's cities (calibrate speed in Map &rarr; Settings). The <b>TC block</b> stamps a columns&times;rows grid of cities.</p>
+        <p><b>Auto-config</b> places a complete alliance — HQ, 2 traps, all 100 TCs, and banners — at one of the 4 best spots near the castle. Pick a style and a spot to preview the ghost (green outline = fits), switch freely, then Place. Needs an empty alliance.</p>
+        <h3>The map &amp; rules</h3>
+        <p>The real-map overlay enforces in-game rules: nothing on structures, terrain, nodes, or the King's zone; no alliance buildings/traps in the Ruins ring; HQs only in Plains/Badlands; banners blocked in structure no-build zones (cities exempt at fortresses/sanctuaries). Blocked placements explain why in a toast.</p>
+        <p>Use the <b>Legend</b> (Map tab) to identify every symbol and show/hide layers. A warning appears if a banner claims an outpost whose type &amp; tier your alliance already has — duplicate buffs don't stack.</p>
+        <h3>Caps &amp; counts</h3>
+        <p>285 banners and 100 TCs per alliance, enforced on placement. Each alliance row shows a live <b>TC x/100 &middot; B x/285</b> count.</p>
+        <h3>Saving &amp; sharing</h3>
+        <p>Work auto-saves in your browser. <b>Save/Load</b> exchanges .json plans with co-leads; <b>PNG</b> exports the map with a legend for alliance chat. Coordinates in the tool match in-game X:Y, so you can call positions directly.</p>
+        <h3>Shortcuts</h3>
+        <p><span class="kbd">V</span> select &nbsp;<span class="kbd">H</span> pan &nbsp;<span class="kbd">E</span> erase &nbsp;<span class="kbd">R</span>/<span class="kbd">Shift+R</span> rotate &nbsp;<span class="kbd">Del</span> delete &nbsp;<span class="kbd">Ctrl+Z</span>/<span class="kbd">Y</span> undo/redo &nbsp;<span class="kbd">Esc</span> cancel</p>
       </div>
-      <div class="note">Save/Load uses a .json file you can share with co-leads. Work is also auto-saved in this browser.</div>
-    </div>
-
-    <div class="sec">
-      <details>
-        <summary>Settings — sizes &amp; coverage</summary>
-        <div class="set"><span>Diamond view (in-game angle)</span><input type="checkbox" id="setRot"></div>
-        <div class="set"><span>Map grid size</span><input type="number" id="setGrid" min="200" max="3000" step="50"></div>
-        <div class="set"><span>Territory opacity</span><input type="range" id="setOpacity" min="5" max="60"></div>
-        <div class="set"><span>March speed (tiles/min)</span><input type="number" id="setMarch" min="1" max="600" step="1" title="Calibrate: time one real march in game, then set tiles-per-minute here"></div>
-        <div id="typeSettings"></div>
-        <div class="note">One grid square = one in-game tile. Default footprints/coverage are estimates — Kingshot values vary by server generation. Adjust here to match your kingdom; saved layouts keep your settings.</div>
-      </details>
-    </div>
-
-    <div class="sec" id="help">
-      <div class="hd">Shortcuts</div>
-      <p><span class="kbd">V</span> select &nbsp;<span class="kbd">H</span> pan &nbsp;<span class="kbd">E</span> erase &nbsp;<span class="kbd">Esc</span> cancel placing</p>
-      <p><span class="kbd">Del</span> delete selected &nbsp;<span class="kbd">Ctrl+Z</span>/<span class="kbd">Y</span> undo/redo</p>
-      <p>Mouse wheel zooms. Pan with the Pan tool (<span class="kbd">H</span>) or middle-drag. Click once to place, keep clicking to place more.</p>
-      <p>Double-click a <b>member city</b> to set the player's name (shown in the square). Double-click an <b>HQ</b> to rename its alliance. Select a <b>trap</b> to see march times from every member city.</p>
-      <p><b>Drag a box</b> over buildings to select them all (hold <span class="kbd">Ctrl</span> or <span class="kbd">Shift</span> to keep the previous selection and add more, box after box), then <b>Group</b> to make them move as one; clicking any grouped building selects the whole group; erasing a grouped building erases the whole group; <b>Ungroup</b> to edit individually. To pan, use the Pan tool (<span class="kbd">H</span>) or middle-drag.</p>
     </div>
   </aside>
 
   <main id="stage">
     <canvas id="cv"></canvas>
     <button id="menuBtn">&#9776;</button>
+    <button id="helpBtn" title="Help & user guide">?</button>
     <div id="hud"></div>
     <div id="toast"></div>
   </main>
@@ -732,12 +775,12 @@ function draw(){
   drawMapStructures(ctx, s);
 
   // object shapes (+ live drop-validity tint while dragging a selection)
-  const dragging = drag && drag.mode==='move' && drag.moved;
+  const dragging = (drag && drag.mode==='move' && drag.moved) || !!carry;
   for (const o of state.objects){
     if (isHidden(o)) continue;
     drawShape(ctx, o, s, selected.has(o));
     if (dragging && selected.has(o)){
-      const bad = drag.blocked && drag.blocked.has(o);
+      const bad = carry ? carry.blocked.has(o) : (drag.blocked && drag.blocked.has(o));
       ctx.fillStyle = bad ? 'rgba(255,70,70,.5)' : 'rgba(70,220,120,.33)';
       const sz = tSize(o.t);
       ctx.fillRect(o.x, o.y, sz, sz);
@@ -986,17 +1029,79 @@ let selected = new Set();          // multi-select; groups select together
 function groupOf(o){ return o.g ? state.objects.filter(q=>q.g===o.g) : [o]; }
 function setSelection(arr){ selected = new Set(arr); updateSelUI(); }
 function clearSelection(){ selected = new Set(); updateSelUI(); }
+/* ---- carry mode: click a selected group to pick it up, click again to place ---- */
+let carry = null;   // {origins:[[o,x0,y0]], offs:[[o,dx,dy]], blocked:Set}
+function startCarry(anchorTile){
+  if (!selected.size) return;
+  const items=[...selected];
+  carry = {
+    origins: items.map(o=>[o,o.x,o.y]),
+    offs: items.map(o=>[o,o.x-anchorTile.x,o.y-anchorTile.y]),
+    blocked: new Set(),
+  };
+  computeCarryBlocked();
+  toast('Carrying '+items.length+' building'+(items.length>1?'s':'')+' \u2014 move, R rotates, click to place, Esc cancels');
+  requestDraw();
+}
+function computeCarryBlocked(){
+  if (!carry) return;
+  carry.blocked = new Set();
+  for (const [o] of carry.offs){
+    const sz=tSize(o.t);
+    if (o.x<0||o.y<0||o.x+sz>state.grid||o.y+sz>state.grid ||
+        !footprintClear(o.x,o.y,sz,selected) || mapBlockReason(o.t,o.x,o.y,sz))
+      carry.blocked.add(o);
+  }
+}
+function moveCarry(tile){
+  if (!carry) return;
+  // clamp anchor so every member stays on the map
+  let ax=tile.x, ay=tile.y;
+  for (const [o,dx,dy] of carry.offs){
+    const sz=tSize(o.t);
+    ax=Math.max(-dx, Math.min(state.grid-sz-dx, ax));
+    ay=Math.max(-dy, Math.min(state.grid-sz-dy, ay));
+  }
+  for (const [o,dx,dy] of carry.offs){ o.x=ax+dx; o.y=ay+dy; }
+  computeCarryBlocked();
+  terrDirty=true; requestDraw();
+}
+function cancelCarry(){
+  if (!carry) return;
+  for (const [o,x0,y0] of carry.origins){ o.x=x0; o.y=y0; }
+  carry=null; terrDirty=true; requestDraw();
+}
+function placeCarry(){
+  if (!carry) return false;
+  computeCarryBlocked();
+  if (carry.blocked.size){
+    toast('\u26a0 Blocked \u2014 '+carry.blocked.size+' building'+(carry.blocked.size>1?'s':'')+' obstructed (red). Move or rotate, or Esc to cancel');
+    return false;
+  }
+  // undo should return to pre-pickup positions: restore, snapshot, re-apply
+  const finals = carry.offs.map(([o])=>[o,o.x,o.y]);
+  for (const [o,x0,y0] of carry.origins){ o.x=x0; o.y=y0; }
+  pushHistory();
+  for (const [o,fx,fy] of finals){ o.x=fx; o.y=fy; }
+  carry=null;
+  terrDirty=true; requestDraw(); autosave();
+  toast('Placed');
+  return true;
+}
 function updateSelUI(){
   const bg=document.getElementById('btnGroup'), bu=document.getElementById('btnUngroup');
   if (!bg) return;
   bg.disabled = selected.size < 2;
   bu.disabled = ![...selected].some(o=>o.g);
+  const rc=document.getElementById('btnRotCW'), rcc=document.getElementById('btnRotCCW');
+  if (rc){ rc.disabled = rcc.disabled = selected.size < 2; }
 }
 let drag = null;
 const pointers = new Map();
 let pinch = null;
 
 function setTool(t, pt){
+  if (carry) cancelCarry();
   tool = t; placeType = pt||null; ghost = null; picked = null;
   if (t!=='select') clearSelection();
   document.getElementById('toolSelect').classList.toggle('on', t==='select');
@@ -1041,6 +1146,11 @@ cv.addEventListener('pointerdown', e=>{
     return;
   }
   const w = toWorld(e.offsetX, e.offsetY);
+  if (carry){
+    if (e.button===2){ cancelCarry(); return; }
+    if (e.button===0){ placeCarry(); }
+    return;
+  }
   if (e.button===1 || tool==='pan'){
     drag = {mode:'pan', w};
     cv.style.cursor='grabbing';
@@ -1082,9 +1192,11 @@ cv.addEventListener('pointerdown', e=>{
       updateSelUI(); requestDraw();
       return;
     }
-    if (!selected.has(o)) setSelection(members);    // clicking a group selects the whole group
+    const wasSelected = selected.has(o);
+    if (!wasSelected) setSelection(members);        // clicking a group selects the whole group
     picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 ${coordStr(o.x,o.y)}`};
-    drag = {mode:'move', items:[...selected].map(m=>({o:m, x0:m.x, y0:m.y})), gx:w.x, gy:w.y, moved:false};
+    drag = {mode:'move', items:[...selected].map(m=>({o:m, x0:m.x, y0:m.y})), gx:w.x, gy:w.y, moved:false,
+            wasSelected, hit:o};
   } else if (e.pointerType==='touch'){
     if (!(e.shiftKey||e.ctrlKey||e.metaKey)) clearSelection();
     drag = {mode:'pan', w};                          // touch keeps drag-to-pan
@@ -1123,6 +1235,10 @@ cv.addEventListener('pointermove', e=>{
   }
   const w = toWorld(e.offsetX, e.offsetY);
   cursorTile = {x:Math.floor(w.x), y:Math.floor(w.y)};
+  if (carry && !drag){
+    moveCarry({x:Math.round(w.x), y:Math.round(w.y)});
+    return;
+  }
   if (drag){
     if (drag.mode==='pan'){
       anchor(drag.w, e.offsetX, e.offsetY);   // grabbed world point follows cursor
@@ -1163,6 +1279,12 @@ function endPointer(e){
   pointers.delete(e.pointerId);
   if (pointers.size<2) pinch = null;
   if (drag){
+    if (drag.mode==='move' && !drag.moved && drag.wasSelected && drag.hit && tool==='select'){
+      const w = toWorld(e.offsetX ?? 0, e.offsetY ?? 0);
+      drag = null;
+      startCarry({x:Math.round(w.x), y:Math.round(w.y)});
+      return;
+    }
     if (drag.mode==='move' && drag.moved){
       if (drag.blocked && drag.blocked.size){
         // invalid drop: snap the whole selection back where it started
@@ -1216,7 +1338,7 @@ cv.addEventListener('wheel', e=>{
   requestDraw();
 }, {passive:false});
 
-cv.addEventListener('contextmenu', e=>{ e.preventDefault(); if(tool==='place') setTool('select'); });
+cv.addEventListener('contextmenu', e=>{ e.preventDefault(); if (carry){ cancelCarry(); return; } if(tool==='place') setTool('select'); });
 
 cv.addEventListener('dblclick', e=>{
   const w = toWorld(e.offsetX, e.offsetY);
@@ -1240,10 +1362,11 @@ window.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
   if ((e.ctrlKey||e.metaKey) && k==='z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if ((e.ctrlKey||e.metaKey) && (k==='y' || (k==='z'&&e.shiftKey))){ e.preventDefault(); redo(); return; }
+  if (k==='r' && !e.ctrlKey && !e.metaKey){ rotateSelection(!e.shiftKey); return; }
   if (k==='v') setTool('select');
   else if (k==='h') setTool('pan');
   else if (k==='e') setTool('erase');
-  else if (k==='escape') setTool('select');
+  else if (k==='escape'){ if (carry){ cancelCarry(); return; } setTool('select'); }
   else if ((k==='delete'||k==='backspace') && selected.size){
     pushHistory();
     state.objects = state.objects.filter(o=>!selected.has(o));
@@ -1464,6 +1587,49 @@ document.getElementById('btnGroup').onclick = ()=>{
   updateSelUI(); autosave();
   toast('Grouped '+selected.size+' buildings');
 };
+function rotateSelection(cw){
+  if (selected.size < 2) return;
+  const items = [...selected];
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for (const o of items){ const sz=tSize(o.t); x0=Math.min(x0,o.x); y0=Math.min(y0,o.y); x1=Math.max(x1,o.x+sz); y1=Math.max(y1,o.y+sz); }
+  const W=x1-x0, H=y1-y0;
+  // trunc (not round) keeps rotations exact: 4×CW = identity, CW then CCW cancels
+  const sx=Math.trunc((W-H)/2), sy=Math.trunc((H-W)/2);   // keep the selection centered
+  const moves=[];
+  for (const o of items){
+    const sz=tSize(o.t);
+    const nx = cw ? x0 + (y1 - o.y - sz) + sx : x0 + (o.y - y0) + sx;
+    const ny = cw ? y0 + (o.x - x0) + sy      : y0 + (x1 - o.x - sz) + sy;
+    moves.push([o,nx,ny]);
+  }
+  if (carry){
+    // rotating mid-carry is always allowed; validity shows in the tint, checked at placement
+    for (const [o,nx,ny] of moves){ o.x=nx; o.y=ny; }
+    // rebuild offsets relative to the cursor so the group keeps following the mouse smoothly
+    const ax = cursorTile ? cursorTile.x : Math.round((x0+x1)/2);
+    const ay = cursorTile ? cursorTile.y : Math.round((y0+y1)/2);
+    carry.offs = items.map(o=>[o, o.x-ax, o.y-ay]);
+    computeCarryBlocked();
+    terrDirty=true; requestDraw();
+    return;
+  }
+  let blocked=0;
+  for (const [o,nx,ny] of moves){
+    const sz=tSize(o.t);
+    if (nx<0||ny<0||nx+sz>state.grid||ny+sz>state.grid ||
+        !footprintClear(nx,ny,sz,selected) || mapBlockReason(o.t,nx,ny,sz)) blocked++;
+  }
+  if (blocked){
+    toast('\u26a0 Can\'t rotate here \u2014 '+blocked+' building'+(blocked>1?'s':'')+' would be obstructed');
+    return;
+  }
+  pushHistory();
+  for (const [o,nx,ny] of moves){ o.x=nx; o.y=ny; }
+  terrDirty=true; requestDraw(); autosave();
+  toast('Rotated 90\u00b0 '+(cw?'clockwise':'counter-clockwise'));
+}
+document.getElementById('btnRotCW').onclick  = ()=>rotateSelection(true);
+document.getElementById('btnRotCCW').onclick = ()=>rotateSelection(false);
 document.getElementById('btnUngroup').onclick = ()=>{
   if (![...selected].some(o=>o.g)) return;
   pushHistory();
@@ -1779,6 +1945,22 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
+
+/* =============== sidebar tabs & help =============== */
+function showTab(name){
+  for (const t of ['Build','Map','Help']){
+    document.getElementById('tab'+t).classList.toggle('on', t===name);
+    document.getElementById('tabBtn'+t).classList.toggle('on', t===name);
+  }
+  document.getElementById('sidebar').scrollTop = 0;
+}
+document.getElementById('tabBtnBuild').onclick = ()=>showTab('Build');
+document.getElementById('tabBtnMap').onclick   = ()=>showTab('Map');
+document.getElementById('tabBtnHelp').onclick  = ()=>showTab('Help');
+document.getElementById('helpBtn').onclick = ()=>{
+  document.getElementById('sidebar').classList.add('open');   // mobile: ensure visible
+  showTab('Help');
+};
 
 /* =============== boot =============== */
 (function init(){
