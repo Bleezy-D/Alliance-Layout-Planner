@@ -965,8 +965,12 @@ function trapCities(trap){
 
 const hud = document.getElementById('hud');
 let cursorTile = null;
+// in-game coordinate labels: the game measures Y from the opposite edge (gameY = grid-1 - y); X matches
+function gameX(x){ return x; }
+function gameY(y){ return (state.grid-1) - y; }
+function coordStr(x,y){ return `X:${gameX(x)} Y:${gameY(y)}`; }
 function drawHud(){
-  const t = cursorTile ? `X:${cursorTile.x} Y:${cursorTile.y}` : '—';
+  const t = cursorTile ? coordStr(cursorTile.x, cursorTile.y) : '—';
   hud.textContent = `${t}  ·  zoom ${Math.round(view.s*100/6)}%  ·  grid ${state.grid}×${state.grid} (1 sq = 1 tile)`;
 }
 
@@ -1073,7 +1077,7 @@ cv.addEventListener('pointerdown', e=>{
       return;
     }
     if (!selected.has(o)) setSelection(members);    // clicking a group selects the whole group
-    picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 X:${o.x} Y:${o.y}`};
+    picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 ${coordStr(o.x,o.y)}`};
     drag = {mode:'move', items:[...selected].map(m=>({o:m, x0:m.x, y0:m.y})), gx:w.x, gy:w.y, moved:false};
   } else if (e.pointerType==='touch'){
     if (!(e.shiftKey||e.ctrlKey||e.metaKey)) clearSelection();
@@ -1164,7 +1168,7 @@ function endPointer(e){
         autosave();
       }
       const o = drag.items[0].o;
-      picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 X:${o.x} Y:${o.y}`};
+      picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 ${coordStr(o.x,o.y)}`};
       requestDraw();
     }
     if (drag.mode==='marquee'){
@@ -1174,7 +1178,7 @@ function endPointer(e){
         if (!drag.add) clearSelection();
         const wt = toWorld((drag.x0+drag.x1)/2, (drag.y0+drag.y1)/2);
         const tx = Math.floor(wt.x), ty = Math.floor(wt.y);
-        picked = (tx>=0 && ty>=0 && tx<state.grid && ty<state.grid) ? {x:tx, y:ty, text:`X:${tx} Y:${ty}`} : null;
+        picked = (tx>=0 && ty>=0 && tx<state.grid && ty<state.grid) ? {x:tx, y:ty, text:coordStr(tx,ty)} : null;
       } else {
         const hit = new Set();
         for (const o of state.objects){
