@@ -953,10 +953,10 @@ function drawLabel(g, o, map, su, alpha){
   if (alpha) g.globalAlpha = alpha;
   const letter = TYPE_DEFS[o.t].letter;
   const nm = o.t==='hq' ? (alliance(o.a)?.name || o.n || '') : (o.n || '');
-  // name renders inside the square for HQs (with the letters) and member cities (instead of the C)
-  const inside = nm && pw >= 26 && (o.t==='hq' || o.t==='city');
+  // names render inside the square: cities replace the C; everything else keeps its letter with the name beneath it
+  const inside = nm && pw >= 26;
   if (letter && pw >= 13 && !(inside && o.t==='city')){
-    const ly = (inside && o.t==='hq') ? c.y - pw*.13 : c.y;   // nudge "HQ" up to make room
+    const ly = (inside && o.t!=='city') ? c.y - pw*.13 : c.y;  // nudge the letter up to make room
     g.font = `bold ${Math.max(9, Math.min(pw*.4, 26))}px system-ui`;
     g.textAlign='center'; g.textBaseline='middle';
     g.fillStyle='rgba(0,0,0,.5)';
@@ -972,18 +972,18 @@ function drawLabel(g, o, map, su, alpha){
       g.font = `bold ${fs}px system-ui`;
       while (fs > 7 && g.measureText(nm).width > maxW){ fs--; g.font = `bold ${fs}px system-ui`; }
       g.textAlign='center'; g.textBaseline='middle';
-      const ny = o.t==='hq' ? c.y + pw*.18 : c.y;  // city: name centered where the C was
+      const ny = o.t==='city' ? c.y : c.y + pw*.18;  // city: name centered where the C was
       g.fillStyle='rgba(0,0,0,.55)';
       g.fillText(nm, c.x+1, ny+1);
       g.fillStyle='#fff';
       g.fillText(nm, c.x, ny);
     } else {
       const oy = pw*(state.rot ? .78 : .58) + 4;
-      g.font = `${o.t==='hq'?'bold ':''}${Math.max(10, Math.min(su*1.6, 15))}px system-ui`;
+      g.font = `bold ${Math.max(10, Math.min(su*1.6, 15))}px system-ui`;
       g.textAlign='center'; g.textBaseline='top';
       g.fillStyle='rgba(0,0,0,.6)';
       g.fillText(nm, c.x+1, c.y+oy+1);
-      g.fillStyle = o.t==='hq' ? '#fff' : '#e8eef6';
+      g.fillStyle = '#fff';
       g.fillText(nm, c.x, c.y+oy);
     }
   }
@@ -1433,44 +1433,75 @@ function placeTCBlock(){
 function renderLegend(){
   const sw = (color, diamond)=>`<span style="display:inline-block; width:11px; height:11px; border-radius:2px; background:${color}; border:1px solid rgba(255,255,255,.3); margin-right:5px; vertical-align:-1px;${diamond?' transform:rotate(45deg) scale(.85);':''}"></span>`;
   const row = (k, html)=>`<label style="display:block; cursor:pointer;"><input type="checkbox" class="legTgl" data-k="${k}" ${visOn(k)?'checked':''} style="vertical-align:-1px; margin-right:5px;">${html}</label>`;
-  const hdr = t=>`<b style="color:var(--dim);">${t}</b>`;
+  const GROUPS = {
+    bld:  ['hq','banner','city','trap','alnode','statues'],
+    strct:['kc','f','sa','bg','do','ro','ao','go','po','to','fl'],
+    outp: ['bg','do','ro','ao','go','po','to','fl'],
+    terr: ['mt','lake','bread','wood','stone','iron'],
+    node: ['bread','wood','stone','iron'],
+  };
+  const hdr = (t, g)=>`<label style="display:block; cursor:pointer; margin-top:6px;"><input type="checkbox" class="grpTgl" data-g="${g}" style="vertical-align:-1px; margin-right:5px;"><b style="color:var(--dim);">${t}</b> <span style="color:var(--dim); font-size:10px;">(all)</span></label>`;
   const rows = [];
-  rows.push(hdr('Your buildings (alliance-colored)'));
+  rows.push(hdr('Your buildings (alliance-colored)','bld'));
   rows.push(row('hq',     sw('#4da3ff',1)+'<b>HQ</b> — Alliance HQ (name shown inside)'));
   rows.push(row('banner', sw('#4da3ff',1)+'<b>B</b> — Banner (projects territory)'));
   rows.push(row('city',   sw('#4da3ff',1)+'<b>C</b> — Member city / TC (player name inside)'));
   rows.push(row('trap',   sw('#4da3ff',1)+'<b>T</b> — Trap / rally (select for march times)'));
   rows.push(row('alnode', sw('#4da3ff',1)+'<b>AN</b> — Alliance resource node (alliance-built)'));
   rows.push(row('statues',sw('#4da3ff',1)+'<b>GG&nbsp;PI&nbsp;SK&nbsp;HV&nbsp;CW</b> — Award statues: Golden Guardian, Pioneer, Sword of Kings, Horn of Victory, Champion\'s Will'));
-  rows.push(hdr('Map structures (fixed, real positions &amp; in-game names)'));
+  rows.push(hdr('Map structures (fixed, real positions)','strct'));
   rows.push(row('kc', sw('#a97fe0',1)+'<b>KC</b> — King\'s Castle + turrets'));
   rows.push(row('f',  sw('#922b21',1)+'<b>F</b> — Fortress (60&times;60 no-build; cities exempt)'));
   rows.push(row('sa', sw('#6c3483',1)+'<b>SA</b> — Sanctuary (60&times;60 no-build; cities exempt)'));
-  rows.push(row('bg', sw('#a04000',1)+'<b>BG</b> — Builder\'s Guild &middot; Construction Outpost'));
-  rows.push(row('do', sw('#7d6608',1)+'<b>DO</b> — Armory &middot; Defense Outpost'));
-  rows.push(row('ro', sw('#1a5276',1)+'<b>RO</b> — Scholar\'s &middot; Research Outpost'));
-  rows.push(row('ao', sw('#943126',1)+'<b>AO</b> — Arsenal &middot; Attack Outpost'));
-  rows.push(row('go', sw('#196f3d',1)+'<b>GO</b> — Forager &middot; Gathering Outpost'));
-  rows.push(row('po', sw('#0e6251',1)+'<b>PO</b> — Harvest &middot; Resource Production Outpost'));
-  rows.push(row('to', sw('#6e2c00',1)+'<b>TO</b> — Drill Camp &middot; Training Outpost'));
+  rows.push(hdr('&nbsp;&nbsp;Outposts','outp'));
+  rows.push(row('bg', sw('#a04000',1)+'<b>BG</b> — Builder\'s Guild &middot; Construction'));
+  rows.push(row('do', sw('#7d6608',1)+'<b>DO</b> — Armory &middot; Defense'));
+  rows.push(row('ro', sw('#1a5276',1)+'<b>RO</b> — Scholar\'s &middot; Research'));
+  rows.push(row('ao', sw('#943126',1)+'<b>AO</b> — Arsenal &middot; Attack'));
+  rows.push(row('go', sw('#196f3d',1)+'<b>GO</b> — Forager &middot; Gathering'));
+  rows.push(row('po', sw('#0e6251',1)+'<b>PO</b> — Harvest &middot; Resource Production'));
+  rows.push(row('to', sw('#6e2c00',1)+'<b>TO</b> — Drill Camp &middot; Training'));
   rows.push(row('fl', sw('#5d6d7e',1)+'<b>FL</b> — Frontier &middot; Frontier Lodge'));
   rows.push('<span style="color:var(--dim);">Outpost names carry their tier (e.g. Armory 2). All outposts have a 15&times;15 no-build zone that blocks cities too. Zoom in to see names on the map.</span>');
-  rows.push(hdr('Terrain &amp; resource nodes (unbuildable)'));
+  rows.push(hdr('Terrain &amp; resource nodes (unbuildable)','terr'));
   rows.push(row('mt',   sw('#656872')+'Mountains'));
   rows.push(row('lake', sw('#286096')+'Lakes'));
+  rows.push(hdr('&nbsp;&nbsp;Resource nodes','node'));
   rows.push(row('bread',sw('#FFB300')+'Bread nodes'));
   rows.push(row('wood', sw('#66BB6A')+'Wood nodes'));
   rows.push(row('stone',sw('#B0BEC5')+'Stone nodes'));
   rows.push(row('iron', sw('#42A5F5')+'Iron nodes'));
-  rows.push(hdr('Overlays'));
+  rows.push(hdr('Overlays','ovl'));
   rows.push(row('fzones','<span style="color:#ff8a8a;">&#9640; dashed red</span> — structure no-build zones'));
   rows.push('<span style="color:var(--dim);">shaded rings — resource-level zones (Resource levels button).</span>');
   rows.push('<span style="color:var(--dim);">Node &amp; terrain positions calibrated against in-game landmarks (community data, spot-verified). If something looks off on your server, tell us the in-game X:Y.</span>');
   document.getElementById('legendBody').innerHTML = rows.join('<br>');
+  GROUPS.ovl = ['fzones'];
+  const TERRKEYS = ['mt','lake','bread','wood','stone','iron'];
+  const syncMasters = ()=>{
+    document.querySelectorAll('.grpTgl').forEach(cb=>{
+      const keys = GROUPS[cb.dataset.g];
+      const on = keys.filter(k=>visOn(k)).length;
+      cb.checked = on === keys.length;
+      cb.indeterminate = on > 0 && on < keys.length;
+    });
+  };
+  syncMasters();
   document.querySelectorAll('.legTgl').forEach(cb=>{
     cb.onchange = ()=>{
       state.vis[cb.dataset.k] = cb.checked;
-      if (['mt','lake','bread','wood','stone','iron'].includes(cb.dataset.k) && terrain) buildMapCanvas();
+      if (TERRKEYS.includes(cb.dataset.k) && terrain) buildMapCanvas();
+      syncMasters();
+      requestDraw(); autosave();
+    };
+  });
+  document.querySelectorAll('.grpTgl').forEach(cb=>{
+    cb.onchange = ()=>{
+      const keys = GROUPS[cb.dataset.g];
+      for (const k of keys) state.vis[k] = cb.checked;
+      document.querySelectorAll('.legTgl').forEach(c=>{ if (keys.includes(c.dataset.k)) c.checked = cb.checked; });
+      if (keys.some(k=>TERRKEYS.includes(k)) && terrain) buildMapCanvas();
+      syncMasters();
       requestDraw(); autosave();
     };
   });
