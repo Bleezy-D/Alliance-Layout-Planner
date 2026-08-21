@@ -74,6 +74,10 @@
   #tabBar button.on{background:#20456e; border-color:var(--accent); color:#fff; font-weight:600;}
   .tabPane{display:none;}
   .tabPane.on{display:block;}
+  #modeSwitch{position:absolute; right:54px; top:10px; z-index:30; display:flex; background:rgba(16,20,26,.9);
+    border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+  #modeSwitch button{border:none; border-radius:0; padding:7px 13px; font-size:12.5px; font-weight:600; background:transparent;}
+  #modeSwitch button.on{background:#20456e; color:#fff;}
   #helpBtn{position:absolute; right:10px; top:10px; z-index:30; font-size:15px; width:34px; height:34px;
     border-radius:50%; font-weight:700;}
   #guide h3{font-size:12.5px; color:var(--accent); margin:14px 0 4px; text-transform:uppercase; letter-spacing:.5px;}
@@ -81,7 +85,12 @@
   #guide ul{padding-left:16px; margin-bottom:6px;}
   #guide b{color:var(--text);}
   #livePop{position:absolute; z-index:40; background:var(--panel); border:1px solid var(--accent); border-radius:10px;
-    padding:10px 12px; width:230px; box-shadow:0 8px 24px rgba(0,0,0,.5); pointer-events:none; display:none; font-size:12px;}
+    padding:10px 12px; width:230px; box-shadow:0 8px 24px rgba(0,0,0,.5); display:none; font-size:12px;}
+  #livePop a{color:var(--accent); font-weight:600; text-decoration:none; font-size:12px; display:inline-block; margin-top:8px;}
+  #livePop a:hover{text-decoration:underline;}
+  #hoverCard{position:absolute; z-index:39; background:rgba(16,20,26,.96); border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; font-size:11.5px; pointer-events:none; display:none; max-width:220px; box-shadow:0 4px 14px rgba(0,0,0,.5);}
+  #hoverCard b{color:#fff;} #hoverCard .hc2{color:var(--dim);}
   #livePop .lpTop{display:flex; gap:9px; align-items:center; margin-bottom:7px;}
   #livePop img{width:40px; height:40px; border-radius:8px; border:1px solid var(--line); flex:none; background:var(--bg);}
   #livePop .lpName{font-weight:700; font-size:13.5px; line-height:1.15;}
@@ -131,6 +140,10 @@
           <button id="btnUngroup" title="Break the selected group apart" disabled>Ungroup</button>
           <button id="btnRotCCW" title="Rotate selection 90° counter-clockwise (Shift+R)" disabled>&#8634;</button>
           <button id="btnRotCW" title="Rotate selection 90° clockwise (R)" disabled>&#8635;</button>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button id="btnHideTC" title="Hide member cities to check banner/territory coverage underneath">&#128065; Hide TCs</button>
+          <button id="btnHideTerr" title="Hide alliance territory shading">&#128065; Hide territory</button>
         </div>
       </div>
 
@@ -260,6 +273,15 @@
         <p><b>Auto-config</b> places a complete alliance — HQ, 2 traps, all 100 TCs, and banners — at one of the 4 best spots near the castle. Pick a style and a spot to preview the ghost (green outline = fits), switch freely, then Place. Needs an empty alliance.</p>
         <h3>Live kingdom (real players)</h3>
         <p>On the <b>Map</b> tab, import your kingdom's live player data from kingshotstats.com. Enter your kingdom number and click the <b>data page</b> link — it opens the raw data in a new tab; copy all of it and paste it into the box, then <b>Load</b> (or upload a saved .json). Every player's city appears at its real coordinate, colored by alliance, with TC level shown when zoomed in. Click a city for name, TC, power, alliance, and shield status. Use the alliance dropdown to isolate one alliance. Direct <b>Fetch</b> only works if you set a CORS proxy; otherwise use paste. These players are a read-only reference — they don't move your buildings or count toward caps.</p>
+        <h3>Linking players &amp; the live map</h3>
+        <ul>
+          <li>After importing your kingdom (Map tab), name a member city with a player's exact in-game name — it auto-matches the live data and adopts their <b>city skin, TC, power, alliance and shield</b>.</li>
+          <li><b>Hover</b> a linked city (or any live player) for a quick card: alliance, TC, power, shield, coordinates and map zone.</li>
+          <li><b>Click</b> it for the full popup with an <b>Open profile</b> link to kingshotstats.</li>
+          <li>The <b>Planner / Live</b> switch (top-right) flips between your layout and the live kingdom of everyone currently in-game.</li>
+        </ul>
+        <h3>Checking coverage</h3>
+        <p>In the Build tab, <b>Hide TCs</b> and <b>Hide territory</b> quickly toggle those layers — hide your member cities to confirm banners and alliance territory fully cover the ground underneath them.</p>
         <h3>The map &amp; rules</h3>
         <p>The real-map overlay enforces in-game rules: nothing on structures, terrain, nodes, or the King's zone; no alliance buildings/traps in the Ruins ring; HQs only in Plains/Badlands; banners blocked in structure no-build zones (cities exempt at fortresses/sanctuaries). Blocked placements explain why in a toast.</p>
         <p>Use the <b>Legend</b> (Map tab) to identify every symbol and show/hide layers. A warning appears if a banner claims an outpost whose type &amp; tier your alliance already has — duplicate buffs don't stack.</p>
@@ -276,8 +298,13 @@
   <main id="stage">
     <canvas id="cv"></canvas>
     <button id="menuBtn">&#9776;</button>
+    <div id="modeSwitch">
+      <button id="modePlanner" class="on" title="Your layout — place and edit buildings">&#128296; Planner</button>
+      <button id="modeLive" title="The live kingdom — real players in-game">&#128225; Live</button>
+    </div>
     <button id="helpBtn" title="Help & user guide">?</button>
     <div id="livePop"></div>
+    <div id="hoverCard"></div>
     <div id="hud"></div>
     <div id="toast"></div>
   </main>
@@ -327,6 +354,7 @@ const state = {
   grid: 1200,
   opacity: 25,
   rot: true,                 // diamond view (45°, matches in-game camera)
+  hideTerr: false,           // quick-hide alliance territory shading
   marchSpd: 60,              // march speed in tiles per minute (calibrate in Settings)
   realMap: true,             // overlay the real Kingshot map (terrain, structures, no-build rules)
   rssView: false,            // shade resource-level zones
@@ -633,6 +661,22 @@ function drawRssLegend(g){
 let livePlayers = [];   // {n,x,y,tc,pw,ab,al,av,sh}  x,y in internal frame
 let liveMeta = null;    // {kid, count}
 let liveFilterAb = '*'; // alliance abbr filter or '*'
+let liveByName = new Map();   // lowercase name -> player
+let mapMode = 'planner';      // 'planner' | 'live'
+const PLAN_TYPES = new Set(['hq','banner','city','trap','alnode','gguard','pioneer','swok','horn','champ']);
+function playerByName(name){ return name ? (liveByName.get(String(name).trim().toLowerCase())||null) : null; }
+function linkCity(o){         // attach live identity to a member city by its name
+  if (o.t!=='city') return;
+  const pl = playerByName(o.n);
+  o.live = pl ? {uid:pl.uid, tc:pl.tc, pw:pl.pw, ab:pl.ab, al:pl.al, sk:pl.sk, av:pl.av, sh:pl.sh, gx:pl.gx, gy:pl.gy} : null;
+}
+function relinkCities(){ for (const o of state.objects) if (o.t==='city') linkCity(o); }
+function profileUrl(uid){ return uid!=null ? ('https://kingshotstats.com/?uid='+encodeURIComponent(uid)) : null; }
+const RING_NAMES=[['forbidden','Forbidden ring'],['ruins','Ruins'],['fertile','Fertile'],['plains','Plains'],['badlands','Badlands']];
+function zoneNameAt(gx,gy){
+  for (const [k,label] of RING_NAMES){ const z=ZONES[k]; if (gx>=z.x1&&gx<=z.x2&&gy>=z.y1&&gy<=z.y2) return label; }
+  return 'Badlands';
+}
 function allianceColor(ab){
   if (!ab) return '#8b98a8';
   let h=0; for (let i=0;i<ab.length;i++) h=(h*31+ab.charCodeAt(i))>>>0;
@@ -646,6 +690,7 @@ function parseLiveJSON(text){
   for (const c of cities){
     if (typeof c.x!=='number' || typeof c.y!=='number') continue;
     out.push({
+      uid: c.uid ?? c.fid ?? null,
       n: String(c.nick_name || c.name || c.nick || '?'),
       x: c.x, y: (MAP_GRID-1)-c.y,                 // game -> internal (vertical flip, matches structures)
       gx: c.x, gy: c.y,
@@ -660,6 +705,9 @@ function parseLiveJSON(text){
   }
   if (!out.length) throw new Error('No players with coordinates in that data.');
   livePlayers = out;
+  liveByName = new Map();
+  for (const pl of out){ const k=pl.n.toLowerCase(); if(!liveByName.has(k)) liveByName.set(k, pl); }
+  relinkCities();
   liveMeta = {kid: d.kid ?? '?', count: out.length};
   state.vis.live = true;
   liveFilterAb = '*';
@@ -667,8 +715,24 @@ function parseLiveJSON(text){
   document.getElementById('liveToggle').style.display='';
   document.getElementById('liveClear').style.display='';
   document.getElementById('liveToggle').textContent='Hide players';
-  setLiveStatus(`Loaded ${out.length} players (kingdom ${liveMeta.kid}).`, 'ok');
+  setLiveStatus(`Loaded ${out.length} players (kingdom ${liveMeta.kid}). Zoom in on an alliance to see city skins; the whole-map view shows dots.`, 'ok');
+  toast(`${out.length} players loaded — zoom in to see city skins`);
+  // frame the kingdom so players are immediately visible
+  if (state.realMap!==true){ state.realMap=true; state.grid=MAP_GRID; renderSettings(); updateMapBtns(); }
+  fitLive();
   requestDraw(); saveLive();
+}
+function fitLive(){
+  const vis = livePlayers.filter(liveVisible);
+  if (!vis.length) return;
+  // find the densest ~80-tile window (most cities nearby) and zoom in so skins are visible
+  let best=null, bestN=-1;
+  for (const pl of vis){
+    let n=0;
+    for (const q of vis){ if (Math.abs(q.x-pl.x)<40 && Math.abs(q.y-pl.y)<40) n++; }
+    if (n>bestN){ bestN=n; best=pl; }
+  }
+  centerOn(best.x, best.y, 4);   // ~4 px/tile: city skins clearly visible
 }
 function liveVisible(pl){
   if (liveFilterAb==='*') return true;
@@ -690,7 +754,7 @@ function getSkin(path){
 }
 // world pass: small alliance-colored dot per player (always; exportable; zoomed-out distribution)
 function drawLivePlayers(g, su){
-  if (!state.vis.live || !livePlayers.length) return;
+  if ((!state.vis.live && mapMode!=='live') || !livePlayers.length) return;
   const r = Math.max(0.6, 2.2/su);
   for (const pl of livePlayers){
     if (!liveVisible(pl)) continue;
@@ -701,9 +765,29 @@ function drawLivePlayers(g, su){
     if (pl.sh){ g.strokeStyle='rgba(150,215,255,.95)'; g.lineWidth=Math.max(0.5/su,0.05); g.stroke(); }
   }
 }
+// linked member cities: draw the matched player's skin on the planner city
+function drawLinkedSkins(g, map, su){
+  if (EXPORTING || su < 2.2 || state.vis.city===false) return;
+  const wI = Math.max(22, Math.min(su*4.6, 84)), hI = wI*0.6;
+  g.textAlign='center'; g.textBaseline='middle';
+  for (const o of state.objects){
+    if (o.t!=='city' || !o.live || isHidden(o)) continue;
+    const c = map(o.x+1, o.y+1);
+    if (c.x<-60||c.y<-60||c.x>cw+60||c.y>chh+60) continue;
+    const img = getSkin(o.live.sk);
+    if (img){ try{ g.drawImage(img, c.x-wI/2, c.y-hI*0.72, wI, hI); }catch(_){}}
+    if (o.live.tc!=null && su>=4){
+      const by=c.y+hI*0.12, bw=Math.max(15,wI*0.34), bh=13;
+      g.fillStyle=allianceColor(o.live.ab);
+      g.beginPath(); g.roundRect ? g.roundRect(c.x-bw/2,by,bw,bh,4) : g.rect(c.x-bw/2,by,bw,bh); g.fill();
+      g.strokeStyle='rgba(0,0,0,.55)'; g.lineWidth=1; g.stroke();
+      g.font='bold 10px system-ui'; g.fillStyle='#fff'; g.fillText(o.live.tc, c.x, by+bh/2+.5);
+    }
+  }
+}
 // screen pass: city-skin icons + TC badge (display only, "looks like their map"); skipped in export
 function drawLiveSkins(g, map, su){
-  if (EXPORTING || !state.vis.live || !livePlayers.length || su < 3) return;
+  if (EXPORTING || (!state.vis.live && mapMode!=='live') || !livePlayers.length || su < 2.2) return;
   const vis=[];
   for (const pl of livePlayers){
     if (!liveVisible(pl)) continue;
@@ -713,7 +797,7 @@ function drawLiveSkins(g, map, su){
     if (vis.length>500) break;   // perf guard: too dense -> dots only
   }
   if (vis.length>500) return;
-  const w = Math.max(20, Math.min(su*4.2, 74));   // icon width in px
+  const w = Math.max(22, Math.min(su*4.6, 84));   // icon width in px
   const h = w*0.6;
   g.textAlign='center'; g.textBaseline='middle';
   for (const [pl,c] of vis){
@@ -751,7 +835,7 @@ function drawLiveSkins(g, map, su){
   }
 }
 function livePlayerAt(wx,wy){
-  if (!state.vis.live) return null;
+  if (!state.vis.live && mapMode!=='live') return null;
   let best=null, bd=1.6;
   for (const pl of livePlayers){
     if (!liveVisible(pl)) continue;
@@ -774,7 +858,9 @@ function showLivePop(pl, sx, sy){
     <div class="lpRow"><span>TC level</span><span>${pl.tc??'—'}</span></div>
     <div class="lpRow"><span>Power</span><span>${fmtPower(pl.pw)}</span></div>
     <div class="lpRow"><span>Coords</span><span>X:${pl.gx} Y:${pl.gy}</span></div>
-    <div class="lpRow"><span>Shield</span><span>${pl.sh?'Active':'None'}</span></div>`;
+    <div class="lpRow"><span>Shield</span><span>${pl.sh?'Active':'None'}</span></div>
+    <div class="lpRow"><span>Zone</span><span>${zoneNameAt(pl.gx,pl.gy)}</span></div>
+    ${pl.uid!=null?`<a href="${profileUrl(pl.uid)}" target="_blank" rel="noopener">Open profile &#8599;</a>`:''}`;
   const stage=document.getElementById('stage').getBoundingClientRect();
   let px=sx+14, py=sy+14;
   if (px+240>stage.width) px=sx-244;
@@ -782,6 +868,27 @@ function showLivePop(pl, sx, sy){
   el.style.left=Math.max(4,px)+'px'; el.style.top=Math.max(4,py)+'px'; el.style.display='block';
 }
 function hideLivePop(){ document.getElementById('livePop').style.display='none'; }
+function hoverInfoAt(wx,wy){
+  // a live player (when live layer on) or a linked member city
+  const lp = livePlayerAt(wx,wy);
+  if (lp) return lp;
+  const o = hitTest(wx,wy);
+  if (o && o.t==='city' && o.live) return {...o.live, n:o.n};
+  return null;
+}
+function showHoverCard(info, sx, sy){
+  const el=document.getElementById('hoverCard');
+  el.innerHTML = `<b>${escapeHtml(info.n)}</b> ${info.tc!=null?`<span class="hc2">TC ${info.tc}</span>`:''}<br>`+
+    `<span class="hc2">${info.ab?('['+escapeHtml(info.ab)+'] '+escapeHtml(info.al)):'No alliance'}</span><br>`+
+    `<span class="hc2">Power ${fmtPower(info.pw)} &middot; ${info.sh?'Shielded':'No shield'}</span><br>`+
+    `<span class="hc2">X:${info.gx} Y:${info.gy} &middot; ${zoneNameAt(info.gx,info.gy)}</span>`;
+  const stage=document.getElementById('stage').getBoundingClientRect();
+  let px=sx+14, py=sy+14;
+  if (px+230>stage.width) px=sx-234;
+  if (py+90>stage.height) py=sy-90;
+  el.style.left=Math.max(4,px)+'px'; el.style.top=Math.max(4,py)+'px'; el.style.display='block';
+}
+function hideHoverCard(){ document.getElementById('hoverCard').style.display='none'; }
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function setLiveStatus(msg, cls){ const e=document.getElementById('liveStatus'); if(e){ e.textContent=msg; e.style.color= cls==='ok'?'#6fd67f':cls==='err'?'#ff8080':'var(--dim)'; } }
 function buildLiveFilter(){
@@ -955,6 +1062,7 @@ function worldTransform(g){
 }
 
 function isHidden(o){
+  if (mapMode==='live' && PLAN_TYPES.has(o.t)) return true;   // live mode hides your plan
   if (o.a && alliance(o.a) && !alliance(o.a).visible) return true;
   return state.vis[visKey(o.t)] === false;
 }
@@ -974,15 +1082,17 @@ function draw(){
   ctx.fillRect(0,0,state.grid,state.grid);
   if (state.rssView) drawZones(ctx, s);
 
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.globalAlpha = state.opacity/100;
-  for (const a of state.alliances){
-    if (!a.visible) continue;
-    const c = terrCanvases.get(a.id);
-    if (c) ctx.drawImage(c, 0, 0);
+  if (!state.hideTerr){
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = state.opacity/100;
+    for (const a of state.alliances){
+      if (!a.visible) continue;
+      const c = terrCanvases.get(a.id);
+      if (c) ctx.drawImage(c, 0, 0);
+    }
+    ctx.restore();
   }
-  ctx.restore();
 
   if (state.realMap && mapCanvas){
     ctx.save(); ctx.imageSmoothingEnabled = false;
@@ -1102,6 +1212,7 @@ function draw(){
 
   drawStructLabels(ctx, worldToScreen, s);
   drawLiveSkins(ctx, worldToScreen, s);
+  drawLinkedSkins(ctx, worldToScreen, s);
 
   // march time labels (screen space, upright)
   if (mTrap) drawMarchLabels(ctx, mTrap, worldToScreen);
@@ -1439,6 +1550,7 @@ cv.addEventListener('pointerdown', e=>{
     }
     const wasSelected = selected.has(o);
     if (!wasSelected) setSelection(members);        // clicking a group selects the whole group
+    if (o.t==='city' && o.live) showLivePop({...o.live, n:o.n}, e.offsetX, e.offsetY);
     picked = {x:o.x, y:o.y, text:`${TYPE_DEFS[o.t].label}${o.n?' \u201c'+o.n+'\u201d':''} \u2014 ${coordStr(o.x,o.y)}`};
     drag = {mode:'move', items:[...selected].map(m=>({o:m, x0:m.x, y0:m.y})), gx:w.x, gy:w.y, moved:false,
             wasSelected, hit:o};
@@ -1518,6 +1630,12 @@ cv.addEventListener('pointermove', e=>{
   }
   if (tool==='place'){ ghost = placeAt(w.x,w.y); requestDraw(); }
   else requestDraw();
+  // hover quick-data card (live players or linked member cities)
+  if (!drag && !carry && tool==='select'){
+    const info = hoverInfoAt(w.x, w.y);
+    if (info){ showHoverCard(info, e.offsetX, e.offsetY); cv.style.cursor='pointer'; }
+    else { hideHoverCard(); cv.style.cursor='crosshair'; }
+  }
 });
 
 function endPointer(e){
@@ -1572,7 +1690,7 @@ function endPointer(e){
 }
 cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', endPointer);
-cv.addEventListener('pointerleave', ()=>{ cursorTile=null; ghost=null; requestDraw(); });
+cv.addEventListener('pointerleave', ()=>{ cursorTile=null; ghost=null; hideHoverCard(); requestDraw(); });
 
 cv.addEventListener('wheel', e=>{
   e.preventDefault();
@@ -1597,8 +1715,12 @@ cv.addEventListener('dblclick', e=>{
     }
     return;
   }
-  const n = prompt(o.t==='city' ? 'Player name for this city:' : ('Name this ' + TYPE_DEFS[o.t].label + ':'), o.n||'');
-  if (n!==null){ pushHistory(); o.n = n.trim().slice(0,24); requestDraw(); autosave(); }
+  const n = prompt(o.t==='city' ? 'Player name for this city (auto-matches imported live data):' : ('Name this ' + TYPE_DEFS[o.t].label + ':'), o.n||'');
+  if (n!==null){
+    pushHistory(); o.n = n.trim().slice(0,24);
+    if (o.t==='city'){ linkCity(o); if (o.live) toast('Matched '+o.n+' — ['+(o.live.ab||'no alliance')+'] TC'+(o.live.tc??'?')); }
+    requestDraw(); autosave();
+  }
 });
 
 
@@ -2041,7 +2163,7 @@ document.getElementById('btnClear').onclick = ()=>{
 
 /* =============== save / load / autosave =============== */
 function serialize(){
-  return JSON.stringify({v:8, grid:state.grid, opacity:state.opacity, rot:state.rot, marchSpd:state.marchSpd, realMap:state.realMap, rssView:state.rssView, vis:state.vis, autoLayout:state.autoLayout,
+  return JSON.stringify({v:8, grid:state.grid, opacity:state.opacity, rot:state.rot, hideTerr:state.hideTerr, marchSpd:state.marchSpd, realMap:state.realMap, rssView:state.rssView, vis:state.vis, autoLayout:state.autoLayout,
     types:state.types, alliances:state.alliances, objects:state.objects, active:state.active});
 }
 function deserialize(json){
@@ -2050,6 +2172,7 @@ function deserialize(json){
   state.grid = clampI(d.grid||1200, 200, 3000);
   state.opacity = d.opacity ?? 25;
   state.rot = d.rot ?? true;
+  state.hideTerr = !!d.hideTerr;
   state.marchSpd = clampI(d.marchSpd ?? 60, 1, 600);
   state.realMap = d.realMap ?? true;
   state.rssView = d.rssView ?? false;
@@ -2245,7 +2368,7 @@ document.getElementById('liveFile').onchange = function(){
   const r=new FileReader(); r.onload=()=>{ try{ parseLiveJSON(r.result); }catch(e){ setLiveStatus(e.message,'err'); } };
   r.readAsText(f); this.value='';
 };
-document.getElementById('liveFilter').onchange = function(){ liveFilterAb=this.value; requestDraw(); saveLive(); };
+document.getElementById('liveFilter').onchange = function(){ liveFilterAb=this.value; fitLive(); requestDraw(); saveLive(); };
 document.getElementById('liveToggle').onclick = function(){
   state.vis.live=!state.vis.live; this.textContent=state.vis.live?'Hide players':'Show players';
   renderLegend(); requestDraw(); saveLive();
@@ -2268,6 +2391,22 @@ function showTab(name){
   }
   document.getElementById('sidebar').scrollTop = 0;
 }
+function setMapMode(m){
+  mapMode=m;
+  document.getElementById('modePlanner').classList.toggle('on', m==='planner');
+  document.getElementById('modeLive').classList.toggle('on', m==='live');
+  if (m==='live' && !livePlayers.length){ toast('Import your kingdom first (Map tab) to see the live map'); }
+  hideLivePop(); hideHoverCard();
+  terrDirty=true; requestDraw();
+}
+function syncHideBtns(){
+  const t=document.getElementById('btnHideTC'); if(t){ t.classList.toggle('on', state.vis.city===false); t.innerHTML=(state.vis.city===false?'&#128584; TCs hidden':'&#128065; Hide TCs'); }
+  const r=document.getElementById('btnHideTerr'); if(r){ r.classList.toggle('on', state.hideTerr===true); r.innerHTML=(state.hideTerr===true?'&#128584; Territory off':'&#128065; Hide territory'); }
+}
+document.getElementById('btnHideTC').onclick = ()=>{ state.vis.city = !(state.vis.city===false) ? false : true; renderLegend(); syncHideBtns(); requestDraw(); autosave(); };
+document.getElementById('btnHideTerr').onclick = ()=>{ state.hideTerr = !state.hideTerr; syncHideBtns(); requestDraw(); autosave(); };
+document.getElementById('modePlanner').onclick = ()=>setMapMode('planner');
+document.getElementById('modeLive').onclick = ()=>setMapMode('live');
 document.getElementById('tabBtnBuild').onclick = ()=>showTab('Build');
 document.getElementById('tabBtnMap').onclick   = ()=>showTab('Map');
 document.getElementById('tabBtnHelp').onclick  = ()=>showTab('Help');
@@ -2294,7 +2433,7 @@ document.getElementById('helpBtn').onclick = ()=>{
   renderLegend();
   renderAutoSpots();
   try{ const pr=localStorage.getItem('ksLiveProxy'); if(pr) document.getElementById('liveProxy').value=pr; }catch(_){}
-  loadLive();
+  loadLive(); relinkCities(); syncHideBtns();
   if (state.realMap) state.grid = MAP_GRID;
   decodeTerrain();
   resize();
